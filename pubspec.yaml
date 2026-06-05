@@ -1,0 +1,69 @@
+name: bank_sampah_fiks
+description: "Aplikasi Bank Sampah - Kelola tabungan sampah Anda."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP Client
+  dio: ^5.4.0
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+
+  # Storage
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.2.2
+
+  # ✅ Firebase — hanya untuk notifikasi
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+
+  # ✅ Local notifications (tampil saat app foreground)
+  flutter_local_notifications: ^17.2.3
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # UI Helpers
+  flutter_screenutil: ^5.9.0
+  cached_network_image: ^3.3.1
+  fluttertoast: ^8.2.14
+
+  # Utilities
+  intl: ^0.19.0
+
+  cupertino_icons: ^1.0.2
+  image_picker: ^1.2.2
+  csv: ^6.0.0
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  path_provider: ^2.1.5
+  share_plus: ^12.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
