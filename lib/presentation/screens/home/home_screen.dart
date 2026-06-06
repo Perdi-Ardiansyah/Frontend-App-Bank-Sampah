@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/../../core/theme/app_colors.dart';
 import '/../../core/theme/app_text_styles.dart';
 import '/../../data/providers/nasabah_provider.dart';
-import '/../../data/providers/auth_provider.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -13,184 +12,116 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
-    final user = ref.watch(currentUserProvider);
-    final unread = ref.watch(unreadNotifCountProvider);
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: () => ref.read(dashboardProvider.notifier).fetch(),
-          child: CustomScrollView(
-            slivers: [
-              // AppBar
-              SliverAppBar(
-                floating: true,
-                backgroundColor: AppColors.background,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                leadingWidth: 56,
-                leading: Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceDim,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primary.withOpacity(0.25),
-                          width: 2,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 24,
-                        color: AppColors.onSurfaceVariant,
-                      ),
+      
+      // ── APPBAR STANDAR (SAMA SEPERTI HALAMAN LAIN) ──
+      appBar: AppBar(
+        title: Text(
+          'Bank Sampah',
+          style: AppTextStyles.headlineMd.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        actions: const [
+          LoncengNotifikasi(), // 👈 Lonceng Pintar
+        ],
+      ),
+      
+      // ── BODY DENGAN SINGLE CHILD SCROLL VIEW ──
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () => ref.read(dashboardProvider.notifier).fetch(),
+        child: SingleChildScrollView(
+          // AlwaysScrollableScrollPhysics wajib agar RefreshIndicator bisa ditarik
+          // meskipun konten layarnya belum penuh
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+
+              // Poin Card
+              dashboard.isLoading
+                  ? _PoinCardSkeleton()
+                  : _PoinCard(
+                      totalPoin: dashboard.totalPoinFormatted,
+                      nilaiRupiah: dashboard.nilaiRupiah,
+                    ),
+
+              const SizedBox(height: 16),
+
+              // Quick Access
+              Row(
+                children: [
+                  Expanded(child: _KatalogCard()),
+                  const SizedBox(width: 12),
+                  Expanded(child: _TukarPoinCard(onTap: onGoToTukar)),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              // Transaksi Terakhir
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Transaksi Terakhir',
+                    style: AppTextStyles.headlineMd.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                title: Text(
-                  'Bank Sampah',
-                  style: AppTextStyles.headlineMd.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: Stack(
+                  GestureDetector(
+                    onTap: () {
+                      // TODO: Arahkan ke tab Riwayat jika ditekan
+                    },
+                    child: Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.notifications_none_rounded,
-                            color: AppColors.textMain,
+                        Text(
+                          'Lihat Semua',
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.primary,
                           ),
-                          onPressed: () {},
                         ),
-                        if (unread > 0)
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: const BoxDecoration(
-                                color: AppColors.error,
-                                shape: BoxShape.circle,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                '$unread',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
 
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-
-                      // Poin Card
-                      dashboard.isLoading
-                          ? _PoinCardSkeleton()
-                          : _PoinCard(
-                              totalPoin: dashboard.totalPoinFormatted,
-                              nilaiRupiah: dashboard.nilaiRupiah,
-                            ),
-
-                      const SizedBox(height: 16),
-
-                      // Quick Access
-                      Row(
-                        children: [
-                          Expanded(child: _KatalogCard()),
-                          const SizedBox(width: 12),
-                          Expanded(child: _TukarPoinCard(onTap: onGoToTukar)),
-                        ],
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // Transaksi Terakhir
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Transaksi Terakhir',
-                            style: AppTextStyles.headlineMd.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {},
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Lihat Semua',
-                                  style: AppTextStyles.labelMd.copyWith(
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: AppColors.primary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      if (dashboard.isLoading)
-                        ...List.generate(
-                          3,
-                          (_) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _TransaksiSkeleton(),
-                          ),
-                        )
-                      else if (dashboard.transaksiTerakhir.isEmpty)
-                        _EmptyTransaksi()
-                      else
-                        ...dashboard.transaksiTerakhir.map((t) {
-                          final isCredit = (t['tipe'] as String?) == 'setoran';
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _TransactionItem(
-                              title: t['judul'] as String? ?? '-',
-                              subtitle: t['waktu'] as String? ?? '-',
-                              poin: t['poin'] as String? ?? '0',
-                              isCredit: isCredit,
-                            ),
-                          );
-                        }),
-
-                      const SizedBox(height: 100),
-                    ],
+              if (dashboard.isLoading)
+                ...List.generate(
+                  3,
+                  (_) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _TransaksiSkeleton(),
                   ),
-                ),
-              ),
+                )
+              else if (dashboard.transaksiTerakhir.isEmpty)
+                _EmptyTransaksi()
+              else
+                ...dashboard.transaksiTerakhir.map((t) {
+                  final isCredit = (t['tipe'] as String?) == 'setoran';
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _TransactionItem(
+                      title: t['judul'] as String? ?? '-',
+                      subtitle: t['waktu'] as String? ?? '-',
+                      poin: t['poin'] as String? ?? '0',
+                      isCredit: isCredit,
+                    ),
+                  );
+                }),
+
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -355,8 +286,16 @@ class _KatalogCard extends StatelessWidget {
         height: 130,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.secondaryContainer,
+          color: AppColors.surfaceWhite, // 1. Ubah ke latar putih
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.4)), // 2. Tambah sempadan (border)
+          boxShadow: [ // 3. Tambah bayang-bayang (shadow)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,12 +304,12 @@ class _KatalogCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6),
+                color: AppColors.primary, // 4. Latar belakang ikon hijau gelap
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
                 Icons.recycling_rounded,
-                color: AppColors.primary,
+                color: Colors.white, // 5. Warna ikon putih
                 size: 22,
               ),
             ),
@@ -378,16 +317,14 @@ class _KatalogCard extends StatelessWidget {
             Text(
               'Katalog Harga',
               style: AppTextStyles.labelMd.copyWith(
-                color: AppColors.secondary,
                 fontWeight: FontWeight.w700,
+                // Warna AppColors.secondary dibuang supaya mengikut warna lalai (gelap)
               ),
             ),
             const SizedBox(height: 2),
             Text(
               'Lihat daftar harga sampah',
-              style: AppTextStyles.bodySm.copyWith(
-                color: AppColors.secondary.withOpacity(0.7),
-              ),
+              style: AppTextStyles.bodySm, // Warna AppColors.secondary dibuang
             ),
           ],
         ),

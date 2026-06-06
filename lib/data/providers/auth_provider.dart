@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
 import '../../core/utils/storage_helper.dart';
-
+import 'dart:io';
+import 'package:dio/dio.dart';
+import '../../core/network/api_client.dart'; // Sesuaikan path-nya jika folder Anda berbeda
 // ── State ──────────────────────────────────────────────────────────────────
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
@@ -43,6 +45,80 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _checkExistingSession();
   }
 
+  // 👇 TAMBAHKAN FUNGSI INI DI DALAM class AuthNotifier 👇
+  
+  /// Memperbarui data user secara lokal di UI dan di Storage secara instan
+  void updateLocalUser({
+    String? namaLengkap,
+    String? email,
+    String? noHp,
+  }) {
+    if (state.user == null) return; // Pastikan user sedang login
+
+    final oldUser = state.user!;
+    final newUser = UserModel(
+      id: oldUser.id,
+      username: oldUser.username, // 👈 TAMBAHKAN BARIS INI
+      idNasabah: oldUser.idNasabah,
+      fotoUrl: oldUser.fotoUrl,
+      role: oldUser.role,
+      isVerified: oldUser.isVerified,
+      totalPoin: oldUser.totalPoin,
+      namaLengkap: namaLengkap ?? oldUser.namaLengkap,
+      email: email ?? oldUser.email,
+      noHp: noHp ?? oldUser.noHp,
+    );
+
+    // 1. Update state UI agar layar langsung berubah
+    state = state.copyWith(user: newUser);
+
+    // 2. Timpa data user di Storage agar tetap awet saat aplikasi ditutup
+    StorageHelper.saveUserObject(newUser.toJsonString()); 
+  }
+  
+  // 👆 SAMPAI SINI 👆
+
+  Future<bool> updateProfilTeks({
+    required String namaLengkap,
+    required String email,
+    required String noHp,
+  }) async {
+    try {
+      final res = await ApiClient.instance.post(
+        '/user/update-profil',
+        data: {
+          'nama_lengkap': namaLengkap,
+          'email': email,
+          'no_hp': noHp,
+        },
+      );
+      return true;
+    } catch (e) {
+      print('🚨 ERROR UPDATE PROFIL: $e');
+      return false;
+    }
+  }
+
+  
+
+  Future<bool> updateFotoProfil(File imageFile) async {
+    try {
+      String fileName = imageFile.path.split('/').last;
+      
+      FormData formData = FormData.fromMap({
+        'foto': await MultipartFile.fromFile(imageFile.path, filename: fileName),
+      });
+
+      final res = await ApiClient.instance.post('/user/update-foto', data: formData); 
+      
+      // BARIS FETCH DIHAPUS DARI SINI
+      
+      return true;
+    } catch (e) {
+      print('🚨 ERROR UPLOAD FOTO: $e');
+      return false;
+    }
+  }
   /// Cek apakah ada sesi tersimpan saat app pertama dibuka
   Future<void> _checkExistingSession() async {
     final isLoggedIn = await StorageHelper.isLoggedIn();
@@ -102,6 +178,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return result.result;
   }
 
+  
   /// Register — dipanggil dari RegisterScreen
   Future<({bool success, String message})> register({
     required String namaLengkap,
@@ -139,6 +216,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 }
+
+
 
 // ── Providers ──────────────────────────────────────────────────────────────
 

@@ -7,6 +7,9 @@ import '/../../data/providers/nasabah_provider.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_text_field.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'edit_profil_screen.dart'; // 👈 Tambahkan baris ini
 
 class AkunScreen extends ConsumerStatefulWidget {
   const AkunScreen({super.key});
@@ -27,6 +30,29 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
     _newPwCtrl.dispose();
     _confirmPwCtrl.dispose();
     super.dispose();
+  }
+
+  bool _isUploadingFoto = false;
+
+  Future<void> _ubahFotoProfil() async {
+    final picker = ImagePicker();
+    // Buka galeri HP
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (pickedFile != null) {
+      setState(() => _isUploadingFoto = true);
+      
+      // Kirim ke backend melalui provider
+      final ok = await ref.read(authProvider.notifier).updateFotoProfil(File(pickedFile.path));
+      
+      setState(() => _isUploadingFoto = false);
+      
+      if (ok) {
+        _showSnackbar('Foto profil berhasil diperbarui!');
+      } else {
+        _showSnackbar('Gagal memperbarui foto profil', isError: true);
+      }
+    }
   }
 
   Future<void> _handleChangePassword() async {
@@ -108,17 +134,21 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     final user      = ref.watch(currentUserProvider);
     final dashboard = ref.watch(dashboardProvider);
-
+    print('🔍 ISI URL FOTO NASABAH: ${user?.fotoUrl}');
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Bank Sampah'),
+        title: Text(
+          'Bank Sampah',
+          style: AppTextStyles.headlineMd.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: const [
-          LoncengNotifikasi(), // 👈 Lonceng Pintar Kita Terpasang di Sini!
+          LoncengNotifikasi(),
         ],
       ),
       body: SingleChildScrollView(
@@ -137,24 +167,82 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 72, height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceDim,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primary.withOpacity(0.25), width: 2),
-                    ),
-                    child: const Icon(Icons.person_rounded, size: 36, color: AppColors.onSurfaceVariant),
+                  // ── FOTO PROFIL DENGAN IKON KAMERA ──
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: 84, 
+                        height: 84,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceDim,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        // 👇 Logika untuk menampilkan foto atau icon loading/default
+                        child: _isUploadingFoto 
+                          ? const Padding(
+                              padding: EdgeInsets.all(24.0),
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : (user?.fotoUrl != null && user!.fotoUrl!.isNotEmpty)
+                              ? Image.network(
+                                  user.fotoUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.person_rounded, size: 40, color: AppColors.onSurfaceVariant),
+                                )
+                              : const Icon(Icons.person_rounded, size: 40, color: AppColors.onSurfaceVariant),
+                      ),
+                      GestureDetector(
+                        onTap: _isUploadingFoto ? null : _ubahFotoProfil, // 👈 Panggil fungsi galeri di sini
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  
+                  const SizedBox(height: 16),
                   Text(user?.namaLengkap ?? '-', style: AppTextStyles.headlineMd.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text('ID Nasabah: ${user?.idNasabah ?? '-'}', style: AppTextStyles.bodySm.copyWith(color: AppColors.onSurfaceVariant)),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   _ProfileInfoRow(icon: Icons.mail_outline_rounded, value: user?.email ?? '-'),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   _ProfileInfoRow(icon: Icons.phone_outlined, value: user?.noHp ?? '-'),
                   const SizedBox(height: 16),
+                  
+                  // ── TOMBOL EDIT PROFIL ──
+                  // ── TOMBOL EDIT PROFIL DI AKUN_SCREEN ──
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // 👇 SAMBUNGKAN NAVIGASI DI SINI
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const EditProfilScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.edit_rounded, size: 18),
+                      label: const Text('Edit Profil'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
                   
                   // Poin Banner
                   Container(
@@ -218,7 +306,7 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
             AppButton(
               label: 'Keluar',
               variant: ButtonVariant.secondary,
-              prefixIcon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 18), // 👈 Ubah icon logout jadi merah biar keren!
+              prefixIcon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 18),
               onPressed: _handleLogout,
             ),
 
@@ -245,4 +333,3 @@ class _ProfileInfoRow extends StatelessWidget {
     ]);
   }
 }
-

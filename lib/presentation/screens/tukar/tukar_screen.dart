@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/../../core/theme/app_colors.dart';
 import '/../../core/theme/app_text_styles.dart';
 import '/../../data/providers/nasabah_provider.dart';
-import '/../../data/providers/auth_provider.dart';
 import '/../../data/models/produk_model.dart';
 import '../../widgets/common/app_button.dart';
+import '../../widgets/common/lonceng_notifikasi.dart';
+
 
 class TukarScreen extends ConsumerStatefulWidget {
   const TukarScreen({super.key});
@@ -100,41 +101,14 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: const BackButton(color: AppColors.textMain),
-        title: const Text('Bank Sampah'),
-        actions: [
-          Consumer(
-            builder: (context, ref, child) {
-              final unread = ref.watch(unreadNotifCountProvider);
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.textMain,
-                    ),
-                    onPressed: () {
-                      // Nanti kita arahkan ke NotifikasiScreen
-                    },
-                  ),
-                  if (unread > 0)
-                    Positioned(
-                      right: 12,
-                      top: 12,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
+        title: Text(
+          'Bank Sampah',
+          style: AppTextStyles.headlineMd.copyWith(
+            fontWeight: FontWeight.w800,
           ),
+        ),
+        actions: [
+          const LoncengNotifikasi(), 
         ],
       ),
       body: RefreshIndicator(

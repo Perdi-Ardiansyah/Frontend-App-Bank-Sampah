@@ -4,6 +4,7 @@ import '/../../core/theme/app_colors.dart';
 import '/../../core/theme/app_text_styles.dart';
 import '/../../data/providers/nasabah_provider.dart';
 import '/../../data/models/produk_model.dart';
+import '../../widgets/common/lonceng_notifikasi.dart';
 
 class KatalogScreen extends ConsumerStatefulWidget {
   const KatalogScreen({super.key});
@@ -38,34 +39,7 @@ class _KatalogScreenState extends ConsumerState<KatalogScreen> {
         leading: const BackButton(color: AppColors.textMain),
         title: const Text('Bank Sampah'),
         actions: [
-          // ── Lonceng Notifikasi Terhubung Database ──
-          Consumer(
-            builder: (context, ref, child) {
-              final unread = ref.watch(unreadNotifCountProvider);
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textMain),
-                    onPressed: () {
-                      // TODO: Navigasi ke Halaman Notifikasi
-                    },
-                  ),
-                  if (unread > 0)
-                    Positioned(
-                      right: 12, top: 12,
-                      child: Container(
-                        width: 8, height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.error, 
-                          shape: BoxShape.circle
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            }
-          ),
+          const LoncengNotifikasi(), 
         ],
       ),
       body: Padding(

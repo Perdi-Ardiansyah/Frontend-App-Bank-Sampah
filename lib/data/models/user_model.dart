@@ -10,7 +10,8 @@ class UserModel {
   final bool isVerified;
   final int totalPoin;
   final String? noHp;
-  final String? idNasabah; // contoh: BS-20231012
+  final String? idNasabah; 
+  final String? fotoUrl;// contoh: BS-20231012
 
   const UserModel({
     required this.id,
@@ -22,9 +23,11 @@ class UserModel {
     required this.totalPoin,
     this.noHp,
     this.idNasabah,
+    this.fotoUrl,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    print('📦 DATA MENTAH DARI LARAVEL: $json');
     return UserModel(
       id:           json['id'] as int,
       username:     json['username'] as String,
@@ -35,6 +38,7 @@ class UserModel {
       totalPoin:    json['total_poin'] as int? ?? 0,
       noHp:         json['no_hp'] as String?,
       idNasabah:    json['id_nasabah'] as String?,
+      fotoUrl: json['foto_profil'] != null ? 'http://10.0.2.2:8000/storage/${json['foto_profil']}' : null,
     );
   }
 
