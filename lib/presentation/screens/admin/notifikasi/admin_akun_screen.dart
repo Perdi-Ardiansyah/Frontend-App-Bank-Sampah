@@ -116,7 +116,7 @@ class _AdminAkunScreenState extends State<AdminAkunScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Bank Sampah'),
+        title: const Text('Profile'),
         actions: const [
           CustomNotifBell(), // 👈 Gunakan Widget Lonceng yang baru dibuat
         ],

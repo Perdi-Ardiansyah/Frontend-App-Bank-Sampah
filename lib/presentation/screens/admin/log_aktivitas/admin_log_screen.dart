@@ -26,23 +26,30 @@ class _AdminLogScreenState extends ConsumerState<AdminLogScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Audit Log'),
-        actions: [const CustomNotifBell()],
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Log Aktivitas'), 
+        actions: const [
+          CustomNotifBell(),
+          SizedBox(width: 8), // Sedikit jarak
+        ],
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              'A',
-              style: AppTextStyles.bodySm.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'A',
+                style: AppTextStyles.bodySm.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

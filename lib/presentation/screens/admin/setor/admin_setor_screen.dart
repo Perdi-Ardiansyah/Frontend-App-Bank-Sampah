@@ -79,46 +79,41 @@ class _AdminSetorScreenState extends ConsumerState<AdminSetorScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Setor Sampah'), 
+        actions: const [
+          CustomNotifBell(),
+          SizedBox(width: 8), // Sedikit jarak
+        ],
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'A',
+                style: AppTextStyles.bodySm.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // AppBar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text('A',
-                          style: AppTextStyles.labelMd.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          )),
-                    ),
-                    const Expanded(
-                      child: Center(
-                        child: Text('Bank Sampah',
-                            style: TextStyle(
-                              fontFamily: 'PlusJakartaSans',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textMain,
-                            )),
-                      ),
-                    ),
-                    const CustomNotifBell()
-                  ],
-                ),
-              ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(

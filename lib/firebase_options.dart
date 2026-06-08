@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'banksampahfiks.firebasestorage.app',
     measurementId: 'G-34CRMDHZ5Q',
   );
+
 }

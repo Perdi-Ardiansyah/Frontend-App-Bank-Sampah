@@ -21,47 +21,43 @@ class AdminBerandaScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Bank Sampah'),
+        actions: const [
+          CustomNotifBell(),
+          SizedBox(width: 8), // Sedikit jarak
+        ],
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'A',
+                style: AppTextStyles.bodySm.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => ref.read(dashboardAdminProvider.notifier).fetch(),
           child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // AppBar
-              SliverAppBar(
-                floating: true,
-                backgroundColor: AppColors.background,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                leadingWidth: 56,
-                leading: Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'A',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-                title: Text(
-                  'Bank Sampah',
-                  style: AppTextStyles.headlineMd.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                actions: [const CustomNotifBell()],
-              ),
-
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -162,7 +158,24 @@ class AdminBerandaScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 28),
 
-                      // Stat Cards
+                      // 👇 GRAFIK DIPASANG DI SINI (PASTI MUNCUL) 👇
+                      _WeeklyStatChart(
+                        nasabahAktif: state.data?.totalNasabah.toString() ?? '0',
+                        // Menggunakan nasabahHariIni sebagai fallback jika tidak ada properti transaksi
+                        transaksiHariIni: state.data?.nasabahHariIni.toString() ?? '0',
+                        setoranHariIni: state.data?.setoranHariIniKg.toString() ?? '0',
+                      ),
+                      const SizedBox(height: 32),
+
+                      Text(
+                        'RINGKASAN KESELURUHAN',
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
                       if (state.isLoading)
                         ...List.generate(
                           4,
@@ -344,6 +357,186 @@ class _StatCard extends StatelessWidget {
                 badge,
                 style: AppTextStyles.bodySm.copyWith(
                   color: badgeColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeeklyStatChart extends StatelessWidget {
+  final String nasabahAktif;
+  final String transaksiHariIni;
+  final String setoranHariIni;
+
+  const _WeeklyStatChart({
+    required this.nasabahAktif,
+    required this.transaksiHariIni,
+    required this.setoranHariIni,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Data dummy untuk grafik batangnya (biarkan statis dulu)
+    final List<Map<String, dynamic>> chartData = [
+      {'day': 'Sen', 'value': 0.3},
+      {'day': 'Sel', 'value': 0.7},
+      {'day': 'Rab', 'value': 0.4},
+      {'day': 'Kam', 'value': 0.8},
+      {'day': 'Jum', 'value': 0.5},
+      {'day': 'Sab', 'value': 0.9},
+      {'day': 'Min', 'value': 0.6},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Statistik Aktivitas',
+                style: AppTextStyles.headlineMd.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textMain,
+                  fontSize: 16,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Hari Ini',
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // DERETAN QUICK STATS BARU
+          Row(
+            children: [
+              _buildMiniStat('Nasabah', nasabahAktif, 'Aktif'),
+              Container(
+                width: 1,
+                height: 30,
+                color: AppColors.outlineVariant.withOpacity(0.5),
+              ),
+              _buildMiniStat('Transaksi', transaksiHariIni, 'Selesai'),
+              Container(
+                width: 1,
+                height: 30,
+                color: AppColors.outlineVariant.withOpacity(0.5),
+              ),
+              _buildMiniStat('Volume', setoranHariIni, 'Kg'),
+            ],
+          ),
+
+          const SizedBox(height: 28),
+
+          // Susunan Grafik Batang (Bar Chart)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: chartData.map((data) {
+              return Column(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceDim,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.bottomCenter,
+                    child: FractionallySizedBox(
+                      heightFactor: data['value'],
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    data['day'],
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget bantuan untuk membuat kotak angka mini
+  Widget _buildMiniStat(String label, String value, String unit) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.bodySm.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: AppTextStyles.headlineMd.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                  fontSize: 22,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Text(
+                unit,
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
               ),

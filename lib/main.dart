@@ -16,6 +16,14 @@ import 'presentation/screens/admin/verifikasi/admin_verifikasi_screen.dart';
 import 'presentation/screens/admin/pencairan/admin_pencairan_screen.dart';
 import 'presentation/screens/admin/kategori/admin_kategori_screen.dart';
 import 'presentation/screens/admin/produk/admin_produk_screen.dart';
+import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +44,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // ✅ Jalankan app DULU, FCM init belakangan (non-blocking)
   runApp(
