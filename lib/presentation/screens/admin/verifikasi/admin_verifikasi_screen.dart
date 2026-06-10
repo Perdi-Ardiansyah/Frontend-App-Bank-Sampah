@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/../../core/theme/app_colors.dart';
 import '/../../core/theme/app_text_styles.dart';
 import '/../../data/providers/admin_provider.dart';
-import '/../../data/services/admin_service.dart' hide NasabahPendingModel;
+
 
 class AdminVerifikasiScreen extends ConsumerWidget {
   const AdminVerifikasiScreen({super.key});

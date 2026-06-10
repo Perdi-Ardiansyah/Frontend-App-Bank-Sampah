@@ -16,7 +16,6 @@ import 'presentation/screens/admin/verifikasi/admin_verifikasi_screen.dart';
 import 'presentation/screens/admin/pencairan/admin_pencairan_screen.dart';
 import 'presentation/screens/admin/kategori/admin_kategori_screen.dart';
 import 'presentation/screens/admin/produk/admin_produk_screen.dart';
-import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')

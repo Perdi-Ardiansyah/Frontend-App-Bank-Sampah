@@ -6,19 +6,21 @@ import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_text_field.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/services/auth_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import '/../../core/network/api_client.dart';
+import 'lupa_sandi_screen.dart'; // Sesuaikan letaknya jika Anda menyimpannya di sub-folder
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
-
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _formKey      = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _rememberMe    = false;
+  bool _rememberMe = false;
 
   @override
   void dispose() {
@@ -30,10 +32,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final result = await ref.read(authProvider.notifier).login(
-      username: _usernameCtrl.text.trim(),
-      password: _passwordCtrl.text,
-    );
+    final result = await ref
+        .read(authProvider.notifier)
+        .login(
+          username: _usernameCtrl.text.trim(),
+          password: _passwordCtrl.text,
+        );
 
     if (!mounted) return;
 
@@ -55,6 +59,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final msg = ref.read(authProvider).errorMessage ?? 'Terjadi kesalahan.';
         _showErrorSnackbar(msg);
         break;
+    }
+  }
+
+  Future<void> simpanFcmTokenKeServer() async {
+    try {
+      // 1. Minta izin notifikasi ke HP
+      await FirebaseMessaging.instance.requestPermission();
+
+      // 2. Ambil token "Alamat HP" dari Google
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+
+      if (fcmToken != null) {
+        print('🚀 FCM Token HP ini: $fcmToken');
+
+        // 3. Kirim ke Laravel agar disimpan di database
+        await ApiClient.instance.post(
+          '/update-fcm-token',
+          data: {'fcm_token': fcmToken},
+        );
+      }
+    } catch (e) {
+      print('Gagal mengirim token FCM: $e');
     }
   }
 
@@ -96,8 +122,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.eco_rounded,
-                          color: Colors.white, size: 24),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -135,8 +164,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   hintText: 'Masukkan nama pengguna',
                   controller: _usernameCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.person_outline_rounded,
-                      color: AppColors.outline, size: 20),
+                  prefixIcon: const Icon(
+                    Icons.person_outline_rounded,
+                    color: AppColors.outline,
+                    size: 20,
+                  ),
                   validator: (v) =>
                       (v == null || v.isEmpty) ? 'Wajib diisi' : null,
                 ),
@@ -148,8 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   hintText: 'Masukkan kata sandi',
                   controller: _passwordCtrl,
                   isPassword: true,
-                  prefixIcon: const Icon(Icons.lock_outline_rounded,
-                      color: AppColors.outline, size: 20),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline_rounded,
+                    color: AppColors.outline,
+                    size: 20,
+                  ),
                   validator: (v) =>
                       (v == null || v.length < 6) ? 'Minimal 6 karakter' : null,
                 ),
@@ -168,31 +203,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             value: _rememberMe,
                             onChanged: isLoading
                                 ? null
-                                : (v) => setState(() => _rememberMe = v ?? false),
+                                : (v) =>
+                                      setState(() => _rememberMe = v ?? false),
                             activeColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             side: BorderSide(
-                                color: AppColors.outline.withOpacity(0.5)),
+                              color: AppColors.outline.withOpacity(0.5),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text('Ingat saya',
-                            style: AppTextStyles.bodyMd.copyWith(
-                                color: AppColors.onSurfaceVariant)),
+                        Text(
+                          'Ingat saya',
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                     TextButton(
-                      onPressed: isLoading ? null : () {},
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text('Lupa sandi?',
-                          style: AppTextStyles.labelMd
-                              .copyWith(color: AppColors.primary)),
-                    ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      // 👇 Hapus kata 'const' di baris ini
+      MaterialPageRoute(builder: (context) => LupaSandiScreen()), 
+    );
+  },
+  child: Text(
+    'Lupa Sandi?',
+    style: AppTextStyles.labelMd.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+  ),
+),
                   ],
                 ),
 
@@ -211,9 +254,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const Expanded(child: Divider(color: Color(0xFFE5E7EB))),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('atau',
-                          style: AppTextStyles.bodyMd
-                              .copyWith(color: AppColors.outline)),
+                      child: Text(
+                        'atau',
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.outline,
+                        ),
+                      ),
                     ),
                     const Expanded(child: Divider(color: Color(0xFFE5E7EB))),
                   ],
@@ -225,16 +271,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Belum punya akun? ',
-                          style: AppTextStyles.bodyMd.copyWith(
-                              color: AppColors.onSurfaceVariant)),
+                      Text(
+                        'Belum punya akun? ',
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
                       GestureDetector(
                         onTap: isLoading
                             ? null
                             : () => Navigator.pushNamed(context, '/register'),
-                        child: Text('Daftar Sekarang',
-                            style: AppTextStyles.labelMd
-                                .copyWith(color: AppColors.primary)),
+                        child: Text(
+                          'Daftar Sekarang',
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),

@@ -289,7 +289,7 @@ class _AdminSetorScreenState extends ConsumerState<AdminSetorScreen> {
                                     value: k.id,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      child: Text(k.nama ?? 'Kategori', style: AppTextStyles.bodyMd),
+                                      child: Text(k.nama , style: AppTextStyles.bodyMd),
                                     ),
                                   );
                                 }).toList(),

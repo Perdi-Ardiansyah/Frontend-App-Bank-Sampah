@@ -487,6 +487,86 @@ class _ProdukCardState extends State<_ProdukCard> {
 
   bool get _canAfford => widget.totalPoin >= widget.produk.biayaPoin * _qty;
 
+  // 👇 1. FUNGSI DIALOG KONFIRMASI DITAMBAHKAN DI SINI 👇
+  Future<void> _konfirmasiTukar() async {
+    final p = widget.produk;
+    final totalHargaPoin = p.biayaPoin * _qty;
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Konfirmasi',
+                style: AppTextStyles.headlineMd.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+              children: [
+                const TextSpan(text: 'Anda yakin ingin melakukan penukaran pada produk '),
+                TextSpan(
+                  text: p.nama,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                if (_qty > 1) ...[
+                  const TextSpan(text: ' sebanyak '),
+                  TextSpan(
+                    text: '$_qty pcs',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
+                ],
+                const TextSpan(text: ' seharga '),
+                TextSpan(
+                  // Menampilkan total poin sesuai dengan jumlah barang (qty)
+                  text: '${totalHargaPoin.toString().replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), '.')} Poin',
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+                const TextSpan(text: '?'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                'Batal',
+                style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('Ya, Tukar', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Jika pengguna menekan "Ya, Tukar", lanjutkan ke proses backend
+    if (confirm == true) {
+      widget.onTukar(_qty);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.produk;
@@ -649,9 +729,10 @@ class _ProdukCardState extends State<_ProdukCard> {
                           label: 'Tukar',
                           height: 42,
                           isLoading: widget.isSubmitting,
-                          onPressed: widget.isSubmitting
+                          // 👇 2. PANGGIL FUNGSI KONFIRMASI DI SINI 👇
+                          onPressed: widget.isSubmitting || !_canAfford
                               ? null
-                              : () => widget.onTukar(_qty),
+                              : _konfirmasiTukar,
                         ),
                       ),
                     ],

@@ -19,6 +19,10 @@ class AdminBerandaScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(dashboardAdminProvider);
 
+    print('==== CEK DATA DARI SERVER ====');
+    print('Grafik: ${state.data?.grafikMingguan}');
+    print('==============================');
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -159,11 +163,22 @@ class AdminBerandaScreen extends ConsumerWidget {
                       const SizedBox(height: 28),
 
                       // 👇 GRAFIK DIPASANG DI SINI (PASTI MUNCUL) 👇
+                      // 👇 GRAFIK DIPASANG DI SINI 👇
+                      // 👇 GRAFIK DIPASANG DI SINI 👇
                       _WeeklyStatChart(
-                        nasabahAktif: state.data?.totalNasabah.toString() ?? '0',
-                        // Menggunakan nasabahHariIni sebagai fallback jika tidak ada properti transaksi
-                        transaksiHariIni: state.data?.nasabahHariIni.toString() ?? '0',
-                        setoranHariIni: state.data?.setoranHariIniKg.toString() ?? '0',
+                        nasabahAktif:
+                            state.data?.totalNasabah.toString() ?? '0',
+
+                        // Ubah ini agar mengambil data TRANSAKSI yang sebenarnya
+                        transaksiHariIni:
+                            state.data?.setoranHariIniTransaksi.toString() ??
+                            '0',
+
+                        // Ubah ini agar mengambil data KG yang sebenarnya
+                        setoranHariIni:
+                            state.data?.setoranHariIniKg.toString() ?? '0',
+
+                        grafikMingguan: state.data?.grafikMingguan,
                       ),
                       const SizedBox(height: 32),
 
@@ -372,25 +387,58 @@ class _WeeklyStatChart extends StatelessWidget {
   final String nasabahAktif;
   final String transaksiHariIni;
   final String setoranHariIni;
+  final List<dynamic>? grafikMingguan; // 👈 Wajib ada penangkap ini
 
   const _WeeklyStatChart({
+    Key? key,
     required this.nasabahAktif,
     required this.transaksiHariIni,
     required this.setoranHariIni,
-  });
+    this.grafikMingguan,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Data dummy untuk grafik batangnya (biarkan statis dulu)
-    final List<Map<String, dynamic>> chartData = [
-      {'day': 'Sen', 'value': 0.3},
-      {'day': 'Sel', 'value': 0.7},
-      {'day': 'Rab', 'value': 0.4},
-      {'day': 'Kam', 'value': 0.8},
-      {'day': 'Jum', 'value': 0.5},
-      {'day': 'Sab', 'value': 0.9},
-      {'day': 'Min', 'value': 0.6},
-    ];
+    // ALAT SADAP UI (Cek log terminal setelah di-refresh)
+    print('💡 [UI] Data masuk ke grafik: $grafikMingguan');
+
+    // 1. Tangkap data dari server, jadikan array kosong jika null
+    final List<dynamic> rawData = grafikMingguan ?? [];
+
+    // 2. Mesin konversi baja ringan (Aman dari tipe data aneh)
+    List<Map<String, dynamic>> chartData = [];
+
+    if (rawData.isNotEmpty) {
+      chartData = rawData.map((item) {
+        // Ekstrak dengan sangat hati-hati
+        double beratAngka = 0.0;
+        if (item['berat'] != null) {
+          beratAngka = double.tryParse(item['berat'].toString()) ?? 0.0;
+        }
+
+        return {'day': item['day']?.toString() ?? '-', 'berat': beratAngka};
+      }).toList();
+    } else {
+      // Jika kosong, tampilkan 0
+      chartData = [
+        {'day': 'Sen', 'berat': 0.0},
+        {'day': 'Sel', 'berat': 0.0},
+        {'day': 'Rab', 'berat': 0.0},
+        {'day': 'Kam', 'berat': 0.0},
+        {'day': 'Jum', 'berat': 0.0},
+        {'day': 'Sab', 'berat': 0.0},
+        {'day': 'Min', 'berat': 0.0},
+      ];
+    }
+
+    // 3. Cari Nilai Tertinggi untuk proporsi tinggi batang
+    double maxBerat = 0.1;
+    for (var item in chartData) {
+      double berat = item['berat'] as double;
+      if (berat > maxBerat) {
+        maxBerat = berat;
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -430,7 +478,7 @@ class _WeeklyStatChart extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Hari Ini',
+                  '7 Hari Terakhir',
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w700,
@@ -441,7 +489,7 @@ class _WeeklyStatChart extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // DERETAN QUICK STATS BARU
+          // Quick Stats
           Row(
             children: [
               _buildMiniStat('Nasabah', nasabahAktif, 'Aktif'),
@@ -462,23 +510,43 @@ class _WeeklyStatChart extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          // Susunan Grafik Batang (Bar Chart)
+          // Susunan Grafik Batang Dinamis
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: chartData.map((data) {
+              double nilaiBerat = data['berat'] as double;
+              double persentaseTinggi = (nilaiBerat / maxBerat).clamp(0.0, 1.0);
+
+              if (nilaiBerat == 0) persentaseTinggi = 0.02;
+
               return Column(
                 children: [
+                  if (nilaiBerat > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        nilaiBerat >= 10
+                            ? nilaiBerat.toStringAsFixed(0)
+                            : nilaiBerat.toStringAsFixed(1),
+                        style: AppTextStyles.bodySm.copyWith(
+                          fontSize: 9,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+
                   Container(
                     width: 14,
-                    height: 120,
+                    height: 100,
                     decoration: BoxDecoration(
                       color: AppColors.surfaceDim,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.bottomCenter,
                     child: FractionallySizedBox(
-                      heightFactor: data['value'],
+                      heightFactor: persentaseTinggi,
                       child: Container(
                         decoration: BoxDecoration(
                           color: AppColors.primary,
@@ -489,7 +557,7 @@ class _WeeklyStatChart extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    data['day'],
+                    data['day'].toString(),
                     style: AppTextStyles.labelSm.copyWith(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 11,
@@ -505,7 +573,6 @@ class _WeeklyStatChart extends StatelessWidget {
     );
   }
 
-  // Widget bantuan untuk membuat kotak angka mini
   Widget _buildMiniStat(String label, String value, String unit) {
     return Expanded(
       child: Column(

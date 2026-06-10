@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/../../core/theme/app_colors.dart';
-import '/../../core/theme/app_text_styles.dart';
 import 'beranda/admin_beranda_screen.dart';
 import 'log_aktivitas/admin_log_screen.dart';
 import 'setor/admin_setor_screen.dart';

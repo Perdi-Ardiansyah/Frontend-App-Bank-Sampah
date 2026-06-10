@@ -4,7 +4,6 @@ import '../models/transaksi_model.dart';
 import '../models/produk_model.dart';
 
 // ── Model khusus Admin ────────────────────────────────────────────────────────
-
 class DashboardAdminModel {
   final int totalNasabah;
   final int nasabahHariIni;
@@ -14,6 +13,7 @@ class DashboardAdminModel {
   final int setoranHariIniKg;
   final int setoranHariIniTransaksi;
   final int poinDiberikanHariIni;
+  final List<dynamic> grafikMingguan; 
 
   const DashboardAdminModel({
     required this.totalNasabah,
@@ -24,20 +24,32 @@ class DashboardAdminModel {
     required this.setoranHariIniKg,
     required this.setoranHariIniTransaksi,
     required this.poinDiberikanHariIni,
+    this.grafikMingguan = const [],
   });
 
   factory DashboardAdminModel.fromJson(Map<String, dynamic> json) {
-    final hari = json['setoran_hari_ini'] as Map<String, dynamic>? ?? {};
-    return DashboardAdminModel(
-      totalNasabah:             json['total_nasabah'] as int? ?? 0,
-      nasabahHariIni:           json['nasabah_hari_ini'] as int? ?? 0,
-      totalPoinBeredar:         json['total_poin_beredar'] as int? ?? 0,
-      menungguVerifikasi:       json['menunggu_verifikasi'] as int? ?? 0,
-      totalSampahKg:            (json['total_sampah_kg'] as num?)?.toDouble() ?? 0,
-      setoranHariIniKg:         (hari['total_kg'] as num?)?.toInt() ?? 0,
-      setoranHariIniTransaksi:  hari['total_transaksi'] as int? ?? 0,
-      poinDiberikanHariIni:     hari['poin_diberikan'] as int? ?? 0,
-    );
+    try {
+      final hari = json['setoran_hari_ini'] as Map<String, dynamic>? ?? {};
+      
+      return DashboardAdminModel(
+        // Gunakan int.tryParse dan double.tryParse agar aman dari beda tipe data String/Integer
+        totalNasabah:             int.tryParse(json['total_nasabah']?.toString() ?? '0') ?? 0,
+        nasabahHariIni:           int.tryParse(json['nasabah_hari_ini']?.toString() ?? '0') ?? 0,
+        totalPoinBeredar:         int.tryParse(json['total_poin_beredar']?.toString() ?? '0') ?? 0,
+        menungguVerifikasi:       int.tryParse(json['menunggu_verifikasi']?.toString() ?? '0') ?? 0,
+        totalSampahKg:            double.tryParse(json['total_sampah_kg']?.toString() ?? '0') ?? 0.0,
+        setoranHariIniKg:         (double.tryParse(hari['total_kg']?.toString() ?? '0') ?? 0).toInt(),
+        setoranHariIniTransaksi:  int.tryParse(hari['total_transaksi']?.toString() ?? '0') ?? 0,
+        poinDiberikanHariIni:     int.tryParse(hari['poin_diberikan']?.toString() ?? '0') ?? 0,
+        grafikMingguan:           json['grafik_mingguan'] != null 
+                                      ? List<dynamic>.from(json['grafik_mingguan']) 
+                                      : [],
+      );
+    } catch (e) {
+      // Alat sadap jika ternyata masih ada yang crash
+      print('🚨 CRASH SAAT PARSING JSON: $e');
+      rethrow;
+    }
   }
 
   String get totalNasabahFormatted => _fmt(totalNasabah);
@@ -55,6 +67,7 @@ class DashboardAdminModel {
     return r.toString();
   }
 }
+// 👈 Tambahkan ini
 
 class NasabahPendingModel {
   final int id;
@@ -218,6 +231,7 @@ class AdminService {
   // ── Dashboard ──────────────────────────────────────────────────────────────
   Future<DashboardAdminModel> getDashboard() async {
     final res = await _dio.get('/admin/dashboard');
+    // Langsung tembak ke Model, tidak perlu diubah-ubah lagi
     return DashboardAdminModel.fromJson(res.data as Map<String, dynamic>);
   }
 

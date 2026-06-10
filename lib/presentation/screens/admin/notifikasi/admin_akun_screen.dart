@@ -281,7 +281,9 @@ class AdminNotifikasiScreen extends ConsumerStatefulWidget {
 
 class _AdminNotifikasiScreenState extends ConsumerState<AdminNotifikasiScreen> {
   String _activeFilter = 'Semua';
-  final List<String> _filters = ['Semua', 'Verifikasi', 'Pencairan', 'Sistem'];
+  
+  // 👇 1. UBAH FILTER: Hapus 'Sistem', Masukkan 'Setoran' dan 'Stok'
+  final List<String> _filters = ['Semua', 'Verifikasi', 'Pencairan', 'Setoran', 'Stok'];
 
   @override
   void initState() {
@@ -289,15 +291,67 @@ class _AdminNotifikasiScreenState extends ConsumerState<AdminNotifikasiScreen> {
     Future.microtask(() => ref.read(notifikasiProvider.notifier).fetch());
   }
 
+  // 👇 2. MESIN DESAIN BARU: Beri warna dan ikon sesuai tipe dari Laravel
   Map<String, dynamic> _getStyleByTipe(String tipe) {
     final t = tipe.toLowerCase();
+    
+    // Tipe 1: Verifikasi (Biru/Mint)
     if (t.contains('verifikasi')) {
-      return {'tagColor': AppColors.mintContainer, 'tagTextColor': AppColors.primary, 'icon': Icons.person_add_rounded, 'iconBg': AppColors.mintContainer, 'iconColor': AppColors.primary, 'label': 'VERIFIKASI'};
+      return {
+        'tagColor': AppColors.mintContainer, 
+        'tagTextColor': AppColors.primary, 
+        'icon': Icons.person_add_rounded, 
+        'iconBg': AppColors.mintContainer, 
+        'iconColor': AppColors.primary, 
+        'label': 'VERIFIKASI'
+      };
     }
+    
+    // Tipe 2: Pencairan (Oranye/Kuning)
     if (t.contains('pencairan') || t.contains('penukaran')) {
-      return {'tagColor': AppColors.warningContainer, 'tagTextColor': AppColors.warningText, 'icon': Icons.account_balance_wallet_rounded, 'iconBg': AppColors.warningContainer, 'iconColor': AppColors.warning, 'label': 'PENCAIRAN'};
+      return {
+        'tagColor': AppColors.warningContainer, 
+        'tagTextColor': AppColors.warningText ?? AppColors.warning, 
+        'icon': Icons.account_balance_wallet_rounded, 
+        'iconBg': AppColors.warningContainer, 
+        'iconColor': AppColors.warning, 
+        'label': 'PENCAIRAN'
+      };
     }
-    return {'tagColor': AppColors.surfaceContainer, 'tagTextColor': AppColors.onSurfaceVariant, 'icon': Icons.settings_rounded, 'iconBg': AppColors.surfaceContainer, 'iconColor': AppColors.onSurfaceVariant, 'label': 'SISTEM'};
+    
+    // Tipe 3: Stok Habis (Merah)
+    if (t.contains('stok') || t.contains('habis')) {
+      return {
+        'tagColor': AppColors.errorContainer, 
+        'tagTextColor': AppColors.error, 
+        'icon': Icons.inventory_2_outlined, 
+        'iconBg': AppColors.errorContainer, 
+        'iconColor': AppColors.error, 
+        'label': 'STOK HABIS'
+      };
+    }
+    
+    // Tipe 4: Setoran Baru (Hijau)
+    if (t.contains('setoran')) {
+      return {
+        'tagColor': AppColors.success.withOpacity(0.15), // Pakai opacity jika tidak ada successContainer
+        'tagTextColor': AppColors.success, 
+        'icon': Icons.recycling_rounded, 
+        'iconBg': AppColors.success.withOpacity(0.15), 
+        'iconColor': AppColors.success, 
+        'label': 'SETORAN BARU'
+      };
+    }
+
+    // Default Fallback (Jika ada tipe yang tidak dikenali)
+    return {
+      'tagColor': AppColors.surfaceContainer, 
+      'tagTextColor': AppColors.onSurfaceVariant, 
+      'icon': Icons.notifications_active_rounded, 
+      'iconBg': AppColors.surfaceContainer, 
+      'iconColor': AppColors.onSurfaceVariant, 
+      'label': 'INFO'
+    };
   }
 
   @override
