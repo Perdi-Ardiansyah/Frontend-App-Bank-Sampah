@@ -11,11 +11,12 @@ class NasabahService {
 
   /// Ambil total poin + 3 transaksi terakhir untuk HomeScreen
   /// GET /api/nasabah/dashboard
-  Future<({int totalPoin, List<dynamic> transaksiTerakhir})> getDashboard() async {
+  Future<({int totalPoin, List<dynamic> transaksiTerakhir})>
+  getDashboard() async {
     final res = await _dio.get('/nasabah/dashboard');
     final data = res.data as Map<String, dynamic>;
     return (
-      totalPoin:         data['total_poin'] as int,
+      totalPoin: data['total_poin'] as int,
       transaksiTerakhir: data['transaksi_terakhir'] as List<dynamic>,
     );
   }
@@ -36,26 +37,28 @@ class NasabahService {
 
   /// Ambil riwayat setoran dengan pagination & filter bulan
   /// GET /api/nasabah/riwayat-setoran?bulan=10&tahun=2023&page=1
-  Future<({List<SetoranModel> data, int totalPoin, int poinBulanIni, int lastPage})>
-      getRiwayatSetoran({
-    int page = 1,
-    int? bulan,
-    int? tahun,
-  }) async {
-    final res = await _dio.get('/nasabah/riwayat-setoran', queryParameters: {
-      'page':  page,
-      if (bulan != null) 'bulan': bulan,
-      if (tahun != null) 'tahun': tahun,
-    });
+  Future<
+    ({List<SetoranModel> data, int totalPoin, int poinBulanIni, int lastPage})
+  >
+  getRiwayatSetoran({int page = 1, int? bulan, int? tahun}) async {
+    final res = await _dio.get(
+      '/nasabah/riwayat-setoran',
+      queryParameters: {
+        'page': page,
+        if (bulan != null) 'bulan': bulan,
+        if (tahun != null) 'tahun': tahun,
+      },
+    );
     final data = res.data as Map<String, dynamic>;
     final items = (data['data'] as List<dynamic>)
         .map((e) => SetoranModel.fromJson(e as Map<String, dynamic>))
         .toList();
     return (
-      data:         items,
-      totalPoin:    int.tryParse(data['total_poin']?.toString() ?? '0') ?? 0,
-      poinBulanIni: int.tryParse(data['poin_bulan_ini']?.toString() ?? '0') ?? 0,
-      lastPage:     int.tryParse(data['last_page']?.toString() ?? '1') ?? 1,
+      data: items,
+      totalPoin: int.tryParse(data['total_poin']?.toString() ?? '0') ?? 0,
+      poinBulanIni:
+          int.tryParse(data['poin_bulan_ini']?.toString() ?? '0') ?? 0,
+      lastPage: int.tryParse(data['last_page']?.toString() ?? '1') ?? 1,
     );
   }
 
@@ -66,17 +69,20 @@ class NasabahService {
     int? bulan,
     int? tahun,
   }) async {
-    final res = await _dio.get('/nasabah/riwayat-penukaran', queryParameters: {
-      'page':  page,
-      if (bulan != null) 'bulan': bulan,
-      if (tahun != null) 'tahun': tahun,
-    });
+    final res = await _dio.get(
+      '/nasabah/riwayat-penukaran',
+      queryParameters: {
+        'page': page,
+        if (bulan != null) 'bulan': bulan,
+        if (tahun != null) 'tahun': tahun,
+      },
+    );
     final data = res.data as Map<String, dynamic>;
     final items = (data['data'] as List<dynamic>)
         .map((e) => PenukaranModel.fromJson(e as Map<String, dynamic>))
         .toList();
-   return (
-      data:     items,
+    return (
+      data: items,
       lastPage: int.tryParse(data['last_page']?.toString() ?? '1') ?? 1,
     );
   }
@@ -101,15 +107,15 @@ class NasabahService {
     required int jumlah,
   }) async {
     try {
-      final res = await _dio.post('/nasabah/tukar-produk', data: {
-        'produk_id': produkId,
-        'jumlah':    jumlah,
-      });
+      final res = await _dio.post(
+        '/nasabah/tukar-produk',
+        data: {'produk_id': produkId, 'jumlah': jumlah},
+      );
       final data = res.data as Map<String, dynamic>;
       return (
-        success:   true,
-        message:   data['message'] as String? ?? 'Penukaran berhasil.',
-        sisaPoin:  data['sisa_poin'] as int?,
+        success: true,
+        message: data['message'] as String? ?? 'Penukaran berhasil.',
+        sisaPoin: data['sisa_poin'] as int?,
       );
     } on DioException catch (e) {
       final msg = _parseError(e);
@@ -124,23 +130,26 @@ class NasabahService {
   /// POST /api/nasabah/tukar-cash
   Future<({bool success, String message, int? sisaPoin})> tukarCash({
     required int nominal,
-    required String metode,          // 'Cash' atau 'Transfer'
-    String? tipeTransfer,            // 'Bank' atau 'e-Wallet'
-    String? namaBankEwallet,         // Contoh: 'BCA', 'Dana', 'Gopay'
-    String? nomorRekening,           // Nomor rekening atau nomor HP
+    required String metode, // 'Cash' atau 'Transfer'
+    String? tipeTransfer, // 'Bank' atau 'e-Wallet'
+    String? namaBankEwallet, // Contoh: 'BCA', 'Dana', 'Gopay'
+    String? nomorRekening, // Nomor rekening atau nomor HP
   }) async {
     try {
-      final res = await _dio.post('/nasabah/tukar-cash', data: {
-        'nominal': nominal,
-        'metode': metode,
-        'tipe_transfer': tipeTransfer,
-        'nama_bank_ewallet': namaBankEwallet,
-        'nomor_rekening': nomorRekening,
-      });
+      final res = await _dio.post(
+        '/nasabah/tukar-cash',
+        data: {
+          'nominal': nominal,
+          'metode': metode,
+          'tipe_transfer': tipeTransfer,
+          'nama_bank_ewallet': namaBankEwallet,
+          'nomor_rekening': nomorRekening,
+        },
+      );
       final data = res.data as Map<String, dynamic>;
       return (
-        success:   true,
-        message:   data['message'] as String? ?? 'Permintaan pencairan dikirim.',
+        success: true,
+        message: data['message'] as String? ?? 'Permintaan pencairan dikirim.',
         sisaPoin: data['sisa_poin'] as int?,
       );
     } on DioException catch (e) {
@@ -152,16 +161,19 @@ class NasabahService {
 
   /// Ambil daftar notifikasi
   /// GET /api/nasabah/notifikasi
-  Future<({List<NotifikasiModel> data, int unreadCount})> getNotifikasi() async {
+  Future<({List<NotifikasiModel> data, int unreadCount})>
+  getNotifikasi() async {
     final res = await _dio.get('/nasabah/notifikasi');
+
     final data = res.data as Map<String, dynamic>;
     final items = (data['data'] as List<dynamic>)
         .map((e) => NotifikasiModel.fromJson(e as Map<String, dynamic>))
         .toList();
-    return (
-      data:        items,
-      unreadCount: data['unread_count'] as int? ?? 0,
-    );
+    print('=== CEK API NOTIFIKASI ===');
+    print('Status Code: ${res.statusCode}');
+    print('Response Data: ${res.data}');
+    print('==========================');
+    return (data: items, unreadCount: data['unread_count'] as int? ?? 0);
   }
 
   /// Tandai semua notifikasi sebagai sudah dibaca
