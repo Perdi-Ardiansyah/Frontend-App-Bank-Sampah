@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+// 👇 Tambahkan import firebase_messaging ini di atas
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../core/network/api_client.dart';
 import '../../core/utils/storage_helper.dart';
 import '../models/user_model.dart';
@@ -19,16 +21,29 @@ class AuthService {
 
   /// Login ke Laravel API.
   /// Endpoint: POST /api/login
-  /// Body: { "username": "...", "password": "..." }
-  /// Response sukses: { "token": "...", "user": { ... } }
+  /// Body: { "username": "...", "password": "...", "fcm_token": "..." }
   Future<({LoginResult result, UserModel? user, String? message})> login({
     required String username,
     required String password,
   }) async {
     try {
+      // 1. AMBIL FCM TOKEN DARI FIREBASE SEBELUM MENEMBAK API LARAVEL
+      String? fcmToken;
+      try {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+        print('✅ FCM Token didapat saat login: $fcmToken');
+      } catch (e) {
+        print('🚨 Gagal mengambil FCM Token: $e');
+      }
+
+      // 2. SISIPKAN FCM TOKEN KE DALAM PAYLOAD POST LOGIN
       final response = await _dio.post(
         '/login',
-        data: {'username': username, 'password': password},
+        data: {
+          'username': username, 
+          'password': password,
+          'fcm_token': fcmToken, // 👈 Token Firebase dikirim ke server di sini
+        },
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -81,7 +96,6 @@ class AuthService {
 
   /// Register nasabah baru.
   /// Endpoint: POST /api/register
-  /// Body: { "nama_lengkap": "...", "username": "...", "email": "...", "password": "..." }
   Future<({bool success, String message})> register({
     required String namaLengkap,
     required String username,
@@ -115,6 +129,14 @@ class AuthService {
     } catch (_) {
       // Tetap lanjut logout lokal meskipun server error
     } finally {
+      // Hapus token Firebase agar tidak menerima notifikasi nyasar setelah logout
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+        print('✅ FCM Token berhasil dihapus dari device');
+      } catch (e) {
+        print('🚨 Gagal menghapus FCM Token: $e');
+      }
+      
       await StorageHelper.clearAll();
     }
   }
@@ -150,13 +172,11 @@ class AuthService {
       final data = e.response?.data as Map<String, dynamic>?;
       if (data == null) return 'Terjadi kesalahan. Coba lagi.';
 
-      // Laravel validation error: { "errors": { "email": ["..."] } }
       final errors = data['errors'] as Map<String, dynamic>?;
       if (errors != null && errors.isNotEmpty) {
         return (errors.values.first as List).first as String;
       }
 
-      // Laravel single message: { "message": "..." }
       return data['message'] as String? ?? 'Terjadi kesalahan. Coba lagi.';
     } catch (_) {
       return 'Terjadi kesalahan. Coba lagi.';
