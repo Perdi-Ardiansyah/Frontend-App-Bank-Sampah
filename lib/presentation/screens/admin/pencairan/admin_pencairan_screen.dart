@@ -165,8 +165,7 @@ class AdminPencairanScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _PencairanCard(
                       item: p,
-                      isSubmitting: state.isSubmitting,
-                      isThisItemSpinning: state.processingId == p.id,
+                      // Hapus pengiriman global state (isSubmitting/isThisItemSpinning)
                       onSelesai: () async {
                         final ok = await ref
                             .read(pencairanAdminProvider.notifier)
@@ -178,7 +177,7 @@ class AdminPencairanScreen extends ConsumerWidget {
                           ok
                               ? 'Pencairan berhasil diselesaikan.'
                               : ref.read(pencairanAdminProvider).error ??
-                                    'Gagal.',
+                                  'Gagal.',
                         );
                       },
                       onTolak: () async {
@@ -192,7 +191,7 @@ class AdminPencairanScreen extends ConsumerWidget {
                           ok
                               ? 'Pencairan ditolak, poin dikembalikan.'
                               : ref.read(pencairanAdminProvider).error ??
-                                    'Gagal.',
+                                  'Gagal.',
                         );
                       },
                     ),
@@ -220,20 +219,41 @@ class AdminPencairanScreen extends ConsumerWidget {
   }
 }
 
-class _PencairanCard extends StatelessWidget {
+// 👇 DIUBAH MENJADI STATEFUL WIDGET 👇
+class _PencairanCard extends StatefulWidget {
   final PencairanAdminModel item;
-  final bool isSubmitting;
-  final bool isThisItemSpinning;
-  final VoidCallback onSelesai;
-  final VoidCallback onTolak;
+  final Future<void> Function() onSelesai;
+  final Future<void> Function() onTolak;
 
   const _PencairanCard({
     required this.item,
-    required this.isSubmitting,
-    required this.isThisItemSpinning,
     required this.onSelesai,
     required this.onTolak,
   });
+
+  @override
+  State<_PencairanCard> createState() => _PencairanCardState();
+}
+
+class _PencairanCardState extends State<_PencairanCard> {
+  // Variabel loading dipisah agar UI lebih informatif
+  bool _isLoadingSelesai = false;
+  bool _isLoadingTolak = false;
+
+  // Mengunci semua tombol di kartu ini jika salah satu sedang loading
+  bool get _isAnyLoading => _isLoadingSelesai || _isLoadingTolak;
+
+  Future<void> _handleSelesai() async {
+    setState(() => _isLoadingSelesai = true);
+    await widget.onSelesai();
+    if (mounted) setState(() => _isLoadingSelesai = false);
+  }
+
+  Future<void> _handleTolak() async {
+    setState(() => _isLoadingTolak = true);
+    await widget.onTolak();
+    if (mounted) setState(() => _isLoadingTolak = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +278,7 @@ class _PencairanCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  item.initials,
+                  widget.item.initials,
                   style: AppTextStyles.labelMd.copyWith(
                     color: AppColors.secondary,
                     fontWeight: FontWeight.w700,
@@ -271,13 +291,13 @@ class _PencairanCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.namaNasabah,
+                      widget.item.namaNasabah,
                       style: AppTextStyles.labelMd.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     Text(
-                      item.tanggal,
+                      widget.item.tanggal,
                       style: AppTextStyles.bodySm.copyWith(fontSize: 11),
                     ),
                   ],
@@ -323,7 +343,7 @@ class _PencairanCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  item.nominalFormatted,
+                  widget.item.nominalFormatted,
                   style: AppTextStyles.headlineMd.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -334,7 +354,7 @@ class _PencairanCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // ── KOTAK RINCIAN METODE PENCAIRAN ──
-          if (item.catatan != null && item.catatan!.isNotEmpty) ...[
+          if (widget.item.catatan != null && widget.item.catatan!.isNotEmpty) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -355,7 +375,7 @@ class _PencairanCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      item.catatan!,
+                      widget.item.catatan!,
                       style: AppTextStyles.bodySm.copyWith(
                         color: AppColors.textMain,
                         height: 1.4,
@@ -373,8 +393,17 @@ class _PencairanCard extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: isSubmitting ? null : onTolak,
-                  icon: const Icon(Icons.close_rounded, size: 16),
+                  onPressed: _isAnyLoading ? null : _handleTolak,
+                  icon: _isLoadingTolak
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.outlineVariant,
+                          ),
+                        )
+                      : const Icon(Icons.close_rounded, size: 16),
                   label: const Text('Tolak'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.textMain,
@@ -392,8 +421,8 @@ class _PencairanCard extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: ElevatedButton.icon(
-                  onPressed: isSubmitting ? null : onSelesai,
-                  icon: isThisItemSpinning
+                  onPressed: _isAnyLoading ? null : _handleSelesai,
+                  icon: _isLoadingSelesai
                       ? const SizedBox(
                           width: 16,
                           height: 16,

@@ -9,6 +9,7 @@ import '../../../widgets/common/app_button.dart';
 import '../notifikasi/admin_akun_screen.dart';
 // Import provider admin Anda
 import '../../../../data/providers/admin_provider.dart';
+import '../../../../core/network/api_client.dart'; // Sesuaikan path jika perlu
 
 class AdminProdukScreen extends ConsumerStatefulWidget {
   const AdminProdukScreen({super.key});
@@ -254,6 +255,7 @@ class _AdminProdukScreenState extends ConsumerState<AdminProdukScreen> {
 }
 
 // ─── Produk Card Dinamis ──────────────────────────────────────────────────────
+// ─── Produk Card Dinamis ──────────────────────────────────────────────────────
 class _ProdukCard extends StatelessWidget {
   final Map<String, dynamic> produk;
   final VoidCallback onEdit;
@@ -267,17 +269,16 @@ class _ProdukCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = (produk['nama'] ?? produk['nama_produk'] ?? 'Tanpa Nama')
-        .toString();
+    final name = (produk['nama'] ?? produk['nama_produk'] ?? 'Tanpa Nama').toString();
 
-    // UBAH BARIS INI: Sesuaikan agar mencari key 'biaya_poin' sesuai keluaran API Laravel
-    final poin =
-        int.tryParse((produk['biaya_poin'] ?? produk['poin']).toString()) ?? 0;
-
+    final poin = int.tryParse((produk['biaya_poin'] ?? produk['poin']).toString()) ?? 0;
     final stok = int.tryParse(produk['stok'].toString()) ?? 0;
     final isActive = produk['is_active'] == 1 || produk['is_active'] == true;
-    final fotoUrl = produk['foto'] ?? produk['foto_url'];
     final isHabis = stok == 0;
+
+    // 👇 URL GAMBAR SEKARANG DITANGANI SEPENUHNYA OLEH API CLIENT 👇
+    final rawFotoUrl = (produk['foto'] ?? produk['foto_url'] ?? '').toString();
+    final finalImageUrl = ApiClient.getImageUrl(rawFotoUrl);
 
     return Container(
       decoration: BoxDecoration(
@@ -295,11 +296,9 @@ class _ProdukCard extends StatelessWidget {
                 height: 160,
                 width: double.infinity,
                 color: AppColors.surfaceDim,
-                child: fotoUrl != null && fotoUrl.toString().isNotEmpty
+                child: finalImageUrl.isNotEmpty
                     ? Image.network(
-                        fotoUrl.toString().startsWith('http')
-                            ? fotoUrl.toString()
-                            : 'http://10.0.2.2:8000/storage/$fotoUrl',
+                        finalImageUrl, // 👈 Memanggil URL yang sudah bersih
                         fit: BoxFit.cover,
                         errorBuilder: (ctx, err, stack) => const Icon(
                           Icons.broken_image_rounded,
@@ -476,12 +475,9 @@ class _ProdukCard extends StatelessWidget {
   IconData _getIconForProduk(String name) {
     final n = name.toLowerCase();
     if (n.contains('sikat')) return Icons.brush_rounded;
-    if (n.contains('tas') || n.contains('kantong'))
-      return Icons.shopping_bag_rounded;
-    if (n.contains('botol') || n.contains('tumbler'))
-      return Icons.water_drop_rounded;
-    if (n.contains('beras') || n.contains('minyak') || n.contains('gula'))
-      return Icons.bakery_dining_rounded;
+    if (n.contains('tas') || n.contains('kantong')) return Icons.shopping_bag_rounded;
+    if (n.contains('botol') || n.contains('tumbler')) return Icons.water_drop_rounded;
+    if (n.contains('beras') || n.contains('minyak') || n.contains('gula')) return Icons.bakery_dining_rounded;
     return Icons.inventory_2_rounded;
   }
 

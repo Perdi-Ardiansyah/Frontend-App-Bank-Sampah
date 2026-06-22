@@ -16,6 +16,7 @@ import 'presentation/screens/admin/verifikasi/admin_verifikasi_screen.dart';
 import 'presentation/screens/admin/pencairan/admin_pencairan_screen.dart';
 import 'presentation/screens/admin/kategori/admin_kategori_screen.dart';
 import 'presentation/screens/admin/produk/admin_produk_screen.dart';
+import 'presentation/screens/auth/auth_checker_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')
@@ -70,8 +71,12 @@ class BankSampahApp extends StatelessWidget {
       title: 'Bank Sampah',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
-      initialRoute: '/login',
+      
+      // 👇 PERBAIKAN: Ubah menjadi '/' agar AuthChecker yang pertama kali jalan
+      initialRoute: '/', 
+      
       routes: {
+        '/': (context) => const AuthCheckerScreen(),
         '/login':            (_) => const LoginScreen(),
         '/register':         (_) => const RegisterScreen(),
         '/pending':          (_) => const PendingVerificationScreen(),

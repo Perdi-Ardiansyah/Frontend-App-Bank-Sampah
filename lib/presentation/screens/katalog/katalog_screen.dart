@@ -5,6 +5,7 @@ import '/../../core/theme/app_text_styles.dart';
 import '/../../data/providers/nasabah_provider.dart';
 import '/../../data/models/produk_model.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
+import '../../../core/network/api_client.dart'; // Sesuaikan titik-titiknya jika perlu
 
 class KatalogScreen extends ConsumerStatefulWidget {
   const KatalogScreen({super.key});
@@ -142,13 +143,18 @@ class _KatalogScreenState extends ConsumerState<KatalogScreen> {
 }
 
 // ── KARTU KATALOG BERBASIS FOTO ─────────────────────────────────────────────
+// ── KARTU KATALOG BERBASIS FOTO ─────────────────────────────────────────────
 class _KatalogCard extends StatelessWidget {
   final KategoriModel item;
   const _KatalogCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    print('Cek Gambar [${item.nama}]: ${item.imageUrl}');
+    // 👇 Sangat bersih! Kita serahkan urusan URL sepenuhnya ke ApiClient
+    final String finalImageUrl = ApiClient.getImageUrl(item.imageUrl);
+
+    print('Cek Gambar Final [${item.nama}]: $finalImageUrl');
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -168,9 +174,9 @@ class _KatalogCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               clipBehavior: Clip.antiAlias, // Agar ujung gambar ikut melengkung
-              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+              child: finalImageUrl.isNotEmpty
                   ? Image.network(
-                      item.imageUrl!,
+                      finalImageUrl, // 👈 URL yang dipanggil sudah dijamin benar
                       fit: BoxFit.cover, // Gambar akan otomatis mengisi ruang
                       errorBuilder: (context, error, stackTrace) {
                         // Jika gambar gagal dimuat (misal server mati/link rusak)

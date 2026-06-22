@@ -50,6 +50,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1 # 👈 Posisi package dipindah ke sini
 
 flutter:
   uses-material-design: true
@@ -67,3 +68,9 @@ flutter:
           weight: 700
         - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
           weight: 800
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png" # 👈 Ganti dengan nama file gambar logo Anda

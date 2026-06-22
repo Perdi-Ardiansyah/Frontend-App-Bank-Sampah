@@ -6,6 +6,7 @@ import '/../../data/providers/nasabah_provider.dart';
 import '/../../data/models/produk_model.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
+import '../../../../core/network/api_client.dart'; // Sesuaikan path jika perlu
 
 
 class TukarScreen extends ConsumerStatefulWidget {
@@ -566,11 +567,14 @@ class _ProdukCardState extends State<_ProdukCard> {
       widget.onTukar(_qty);
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     final p = widget.produk;
     final isHabis = p.isHabis;
+
+    // ─── PERBAIKAN LOGIKA GAMBAR DI SINI ───
+    final finalImageUrl = ApiClient.getImageUrl(p.fotoUrl);
 
     return Container(
       decoration: BoxDecoration(
@@ -593,13 +597,13 @@ class _ProdukCardState extends State<_ProdukCard> {
                     top: Radius.circular(16),
                   ),
                 ),
-                child: p.fotoUrl != null
+                child: finalImageUrl.isNotEmpty
                     ? ClipRRect(
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
                         child: Image.network(
-                          p.fotoUrl!,
+                          finalImageUrl, // 👈 Memanggil URL yang sudah dibersihkan
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Icon(
                             Icons.image_not_supported_outlined,
@@ -729,7 +733,7 @@ class _ProdukCardState extends State<_ProdukCard> {
                           label: 'Tukar',
                           height: 42,
                           isLoading: widget.isSubmitting,
-                          // 👇 2. PANGGIL FUNGSI KONFIRMASI DI SINI 👇
+                          // 👇 PANGGIL FUNGSI KONFIRMASI DI SINI 👇
                           onPressed: widget.isSubmitting || !_canAfford
                               ? null
                               : _konfirmasiTukar,

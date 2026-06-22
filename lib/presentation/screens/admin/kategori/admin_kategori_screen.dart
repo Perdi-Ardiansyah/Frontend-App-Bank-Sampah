@@ -9,6 +9,7 @@ import '../../../widgets/common/app_button.dart';
 import '../notifikasi/admin_akun_screen.dart';
 // Sesuaikan dengan path import provider Anda
 import '../../../../data/providers/admin_provider.dart';
+import '../../../../core/network/api_client.dart'; // Sesuaikan path titik-titiknya
 
 class AdminKategoriScreen extends ConsumerStatefulWidget {
   const AdminKategoriScreen({super.key});
@@ -193,6 +194,9 @@ class _KategoriCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 👇 URL GAMBAR SEKARANG DITANGANI SEPENUHNYA OLEH API CLIENT 👇
+    final finalImageUrl = ApiClient.getImageUrl(imageUrl);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceWhite,
@@ -236,11 +240,9 @@ class _KategoriCard extends StatelessWidget {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: imageUrl != null && imageUrl!.isNotEmpty
+                        child: finalImageUrl.isNotEmpty
                             ? Image.network(
-                                imageUrl!.startsWith('http')
-                                    ? imageUrl!
-                                    : 'http://10.0.2.2:8000/storage/$imageUrl',
+                                finalImageUrl, // 👈 Memanggil URL yang sudah dibersihkan
                                 fit: BoxFit.cover,
                                 errorBuilder: (ctx, err, stack) => const Icon(
                                   Icons.broken_image,

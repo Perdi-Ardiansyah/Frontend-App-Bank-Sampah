@@ -111,7 +111,7 @@ class AdminVerifikasiScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Loading
+              // Loading Skeleton
               if (state.isLoading)
                 ...List.generate(2, (_) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -136,9 +136,9 @@ class AdminVerifikasiScreen extends ConsumerWidget {
                 ...state.data.map((nasabah) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _NasabahCard(
-                    nasabah:      nasabah,
-                    isSubmitting: state.isSubmitting,
-                    onAktifkan:   () async {
+                    nasabah: nasabah,
+                    // Kita tidak lagi mengirim isSubmitting global ke sini
+                    onAktifkan: () async {
                       final ok = await ref
                           .read(verifikasiProvider.notifier)
                           .aktifkan(nasabah.id);
@@ -166,16 +166,34 @@ class AdminVerifikasiScreen extends ConsumerWidget {
   }
 }
 
-class _NasabahCard extends StatelessWidget {
+// 👇 DIUBAH MENJADI STATEFUL WIDGET AGAR PUNYA LOADING LOKAL 👇
+class _NasabahCard extends StatefulWidget {
   final NasabahPendingModel nasabah;
-  final bool isSubmitting;
-  final VoidCallback onAktifkan;
+  // Ubah tipe menjadi Future<void> Function() agar bisa di-await
+  final Future<void> Function() onAktifkan;
 
   const _NasabahCard({
     required this.nasabah,
-    required this.isSubmitting,
     required this.onAktifkan,
   });
+
+  @override
+  State<_NasabahCard> createState() => _NasabahCardState();
+}
+
+class _NasabahCardState extends State<_NasabahCard> {
+  // Variabel loading khusus untuk kartu ini saja
+  bool _isLoadingLokal = false;
+
+  Future<void> _handleAktifkan() async {
+    setState(() => _isLoadingLokal = true); // Nyalakan loading di kartu ini
+    
+    await widget.onAktifkan(); // Tunggu proses API selesai
+    
+    if (mounted) {
+      setState(() => _isLoadingLokal = false); // Matikan loading
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +213,7 @@ class _NasabahCard extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: AppColors.mintContainer, shape: BoxShape.circle),
                 alignment: Alignment.center,
-                child: Text(nasabah.initials,
+                child: Text(widget.nasabah.initials,
                     style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary, fontWeight: FontWeight.w700)),
               ),
@@ -204,14 +222,14 @@ class _NasabahCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(nasabah.namaLengkap,
+                    Text(widget.nasabah.namaLengkap,
                         style: AppTextStyles.headlineMd.copyWith(
                             fontWeight: FontWeight.w700, fontSize: 18)),
                     Row(children: [
                       const Icon(Icons.mail_outline_rounded,
                           size: 12, color: AppColors.onSurfaceVariant),
                       const SizedBox(width: 4),
-                      Text(nasabah.email,
+                      Text(widget.nasabah.email,
                           style: AppTextStyles.bodySm.copyWith(fontSize: 12)),
                     ]),
                   ],
@@ -229,11 +247,11 @@ class _NasabahCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(children: [
-              _Row('Tanggal Daftar', nasabah.tanggalDaftar),
+              _Row('Tanggal Daftar', widget.nasabah.tanggalDaftar),
               const SizedBox(height: 8),
-              _Row('Tipe Nasabah',   nasabah.tipeNasabah),
+              _Row('Tipe Nasabah',   widget.nasabah.tipeNasabah),
               const SizedBox(height: 8),
-              _Row('Lokasi Area',    nasabah.lokasiArea),
+              _Row('Lokasi Area',    widget.nasabah.lokasiArea),
             ]),
           ),
 
@@ -244,8 +262,9 @@ class _NasabahCard extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: ElevatedButton.icon(
-                  onPressed: isSubmitting ? null : onAktifkan,
-                  icon: isSubmitting
+                  // 👇 Gunakan _isLoadingLokal
+                  onPressed: _isLoadingLokal ? null : _handleAktifkan,
+                  icon: _isLoadingLokal
                       ? const SizedBox(width: 16, height: 16,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))

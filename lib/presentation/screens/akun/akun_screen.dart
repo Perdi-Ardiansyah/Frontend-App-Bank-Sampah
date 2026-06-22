@@ -9,7 +9,8 @@ import '../../widgets/common/app_text_field.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'edit_profil_screen.dart'; // 👈 Tambahkan baris ini
+import 'edit_profil_screen.dart'; 
+import '../../../core/network/api_client.dart'; 
 
 class AkunScreen extends ConsumerStatefulWidget {
   const AkunScreen({super.key});
@@ -49,6 +50,8 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
       
       if (ok) {
         _showSnackbar('Foto profil berhasil diperbarui!');
+        // 👇 PERBAIKAN: Paksa Riverpod mengambil data user terbaru agar foto langsung berubah!
+        ref.invalidate(currentUserProvider); 
       } else {
         _showSnackbar('Gagal memperbarui foto profil', isError: true);
       }
@@ -138,6 +141,9 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
     final user      = ref.watch(currentUserProvider);
     final dashboard = ref.watch(dashboardProvider);
     
+    // 👇 PERBAIKAN: Bersihkan URL menggunakan ApiClient
+    final finalFotoUrl = ApiClient.getImageUrl(user?.fotoUrl);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -152,19 +158,13 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
         ],
       ),
       
-      // 👇 1. BUNGKUS SELURUH BODY DENGAN RefreshIndicator 👇
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () async {
-          // Paksa Riverpod menghapus cache lama dan mengambil data terbaru dari Laravel
           ref.invalidate(currentUserProvider);
           ref.invalidate(dashboardProvider);
-          
-          // Beri jeda animasi sebentar agar tarikannya terasa natural
           await Future.delayed(const Duration(milliseconds: 800));
         },
-        
-        // 👇 2. TAMBAHKAN PHYSICS AGAR SELALU BISA DITARIK 👇
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(), 
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -200,9 +200,10 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
                                 padding: EdgeInsets.all(24.0),
                                 child: CircularProgressIndicator(strokeWidth: 3),
                               )
-                            : (user?.fotoUrl != null && user!.fotoUrl!.isNotEmpty)
+                            // 👇 PERBAIKAN: Gunakan finalFotoUrl yang sudah dibersihkan
+                            : finalFotoUrl.isNotEmpty
                                 ? Image.network(
-                                    user.fotoUrl!,
+                                    finalFotoUrl,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.person_rounded, size: 40, color: AppColors.onSurfaceVariant),
                                   )

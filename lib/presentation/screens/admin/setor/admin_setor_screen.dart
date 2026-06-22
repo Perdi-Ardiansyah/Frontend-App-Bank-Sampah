@@ -311,7 +311,7 @@ class _AdminSetorScreenState extends ConsumerState<AdminSetorScreen> {
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   style: AppTextStyles.bodyLg.copyWith(fontWeight: FontWeight.w600),
                                   decoration: const InputDecoration(
-                                    hintText: '0.0',
+                                    // hintText: '0.0',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(12),

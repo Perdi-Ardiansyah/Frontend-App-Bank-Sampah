@@ -137,7 +137,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Login — dipanggil dari LoginScreen
+
   /// Return LoginResult agar screen bisa navigasi sesuai hasilnya
   Future<LoginResult> login({
     required String username,
@@ -195,6 +195,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
     state = state.copyWith(status: AuthStatus.unauthenticated);
     return result;
+  }
+
+  /// Tarik data user terbaru dari backend (Berguna untuk auto-login / refresh)
+  Future<bool> fetchUserProfile() async {
+    try {
+      // Pastikan endpoint '/user/me' atau '/profil' sesuai dengan route di Laravel Anda
+      final response = await ApiClient.instance.get('/user/me'); 
+      
+      // Sesuaikan 'data' dengan bentuk JSON response dari Laravel Anda
+      final userData = response.data['data']; 
+      
+      // Ubah JSON dari API menjadi UserModel
+      final updatedUser = UserModel.fromJson(userData);
+
+      // 1. Perbarui state di UI
+      state = state.copyWith(user: updatedUser, status: AuthStatus.authenticated);
+
+      // 2. Timpa data lama di storage lokal agar tetap awet
+      await StorageHelper.saveUserObject(updatedUser.toJsonString());
+      
+      return true;
+    } catch (e) {
+      print('🚨 ERROR FETCH PROFILE: $e');
+      // Jika error 401 (token mati), Interceptor di api_client.dart Anda otomatis 
+      // akan menghapus token dan melempar user ke halaman login.
+      return false;
+    }
   }
 
   /// Logout
