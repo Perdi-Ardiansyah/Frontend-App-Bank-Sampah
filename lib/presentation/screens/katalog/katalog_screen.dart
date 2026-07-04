@@ -152,6 +152,7 @@ class _KatalogCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 👇 Sangat bersih! Kita serahkan urusan URL sepenuhnya ke ApiClient
     final String finalImageUrl = ApiClient.getImageUrl(item.imageUrl);
+    
 
     print('Cek Gambar Final [${item.nama}]: $finalImageUrl');
 

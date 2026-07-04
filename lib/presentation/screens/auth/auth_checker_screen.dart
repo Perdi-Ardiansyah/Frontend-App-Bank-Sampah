@@ -24,37 +24,44 @@ class _AuthCheckerScreenState extends ConsumerState<AuthCheckerScreen> {
   }
 
   Future<void> _periksaSessionLog() async {
-    // 1. Ambil token dari local storage secure
-    final token = await StorageHelper.getToken();
+    try {
+      final token = await StorageHelper.getToken();
 
-    if (token != null && token.isNotEmpty) {
-      try {
-        // 2. Tarik data profil user terbaru dari API Laravel
-        await ref.read(authProvider.notifier).fetchUserProfile(); 
+      if (token != null && token.isNotEmpty) {
+        final userJson = await StorageHelper.getUserObject();
 
-        // 3. Ambil data user yang sudah di-update di provider
-        final user = ref.read(currentUserProvider);
+        if (userJson != null) {
+          // Biarkan jalan di latar belakang, abaikan jika gagal jaringan
+          ref.read(authProvider.notifier).fetchUserProfile().catchError((_) => false);
 
-        if (!mounted) return;
+          final role = await StorageHelper.getRole();
+          
+          if (!mounted) return;
 
-        // 4. Arahkan ke halaman utama berdasarkan Role
-        // (Pastikan pengecekan role sesuai dengan tipe data di Laravel Anda: int atau String)
-        if (user?.role == 'admin' || user?.role == '1' || user?.role == 1) {
-          Navigator.pushReplacementNamed(context, '/admin-main');
-        } else {
-          Navigator.pushReplacementNamed(context, '/nasabah-main');
+          // ⚠️ PERHATIKAN BAGIAN INI: 
+          // Pastikan '/admin-main' dan '/nasabah-main' benar-benar 
+          // terdaftar persis seperti ini di rute MaterialApp (main.dart) Anda!
+          if (role == 'admin' || role == '1') {
+            Navigator.pushReplacementNamed(context, '/admin-home');
+          } else {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+          return; // Selesai dan keluar dari fungsi
         }
-      } catch (e) {
-        // Jika token tidak valid/expired di server, bersihkan storage dan minta login ulang
-        print('🚨 Sesi berakhir atau token tidak valid: $e');
-        await StorageHelper.clearAll();
-        
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    } else {
-      // Jika token memang kosong dari awal, langsung arahkan ke halaman login
+      } 
+      
+      // Jika token/userJson kosong, paksa ke login
       if (!mounted) return;
+      await StorageHelper.clearAll();
+      Navigator.pushReplacementNamed(context, '/login');
+
+    } catch (e) {
+      // 👇 INI PENYELAMATNYA 👇
+      // Jika terjadi error apa pun (memori rusak, bug, dll),
+      // tangkap errornya dan paksa kembali ke halaman login agar tidak stuck!
+      print('🚨 ERROR FATAL DI AUTH CHECKER: $e');
+      if (!mounted) return;
+      await StorageHelper.clearAll();
       Navigator.pushReplacementNamed(context, '/login');
     }
   }

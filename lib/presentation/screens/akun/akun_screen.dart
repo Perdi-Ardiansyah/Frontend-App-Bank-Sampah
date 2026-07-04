@@ -50,8 +50,8 @@ class _AkunScreenState extends ConsumerState<AkunScreen> {
       
       if (ok) {
         _showSnackbar('Foto profil berhasil diperbarui!');
-        // 👇 PERBAIKAN: Paksa Riverpod mengambil data user terbaru agar foto langsung berubah!
-        ref.invalidate(currentUserProvider); 
+        // 👇 PERBAIKAN: Gunakan fungsi fetchUserProfile untuk memaksa sinkronisasi dengan server
+        await ref.read(authProvider.notifier).fetchUserProfile(); 
       } else {
         _showSnackbar('Gagal memperbarui foto profil', isError: true);
       }

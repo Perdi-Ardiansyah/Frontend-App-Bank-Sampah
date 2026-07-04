@@ -23,22 +23,28 @@ class ApiClient {
   static const String baseUrl = '$serverUrl/api';
 
   // 2. FUNGSI PINTAR PEMBERSIH GAMBAR TERPUSAT
-  static String getImageUrl(String? rawUrl) {
-    if (rawUrl == null || rawUrl.isEmpty) return '';
+  static String getImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
 
-    // Jika database mengembalikan link utuh berawalan http/https
-    if (rawUrl.startsWith('http')) {
-      // Hapus otomatis IP emulator (10.0.2.2) atau IP WiFi lokal lama (192.168.x.x)
-      // dan ganti dengan domain publik yang baru
-      return rawUrl.replaceAll(
-        RegExp(r'http://10\.0\.2\.2:8000|http://192\.168\.\d+\.\d+:8000|http://localhost:8000'),
-        serverUrl
-      );
-    } 
+    // 1. SAPU BERSIH: Paksa ubah semua localhost menjadi domain asli cPanel Anda
+    path = path.replaceAll('http://10.0.2.2:8000', 'https://banksampahkita.kotapintar.my.id');
+    path = path.replaceAll('http://localhost:8000', 'https://banksampahkita.kotapintar.my.id');
+    path = path.replaceAll('http://127.0.0.1:8000', 'https://banksampahkita.kotapintar.my.id');
+
+    // 2. Jika setelah diganti jalurnya sudah berawalan http yang benar, langsung tampilkan
+    if (path.startsWith('http')) {
+      return path;
+    }
+
+    // 3. Jika data dari database hanya berupa jalur pendek (contoh: kategori/kaca.jpg)
+    // KITA PAKSA PAKAI DOMAIN CPANEL, bukan variabel lagi.
+    String domain = 'https://banksampahkita.kotapintar.my.id';
     
-    // Jika database hanya mengembalikan nama file (misal: 'kategori/besi.jpg')
-    // Langsung gabungkan dengan domain publik dan folder storage
-    return '$serverUrl/storage/$rawUrl';
+    if (path.startsWith('/')) {
+      path = path.substring(1); 
+    }
+
+    return '$domain/storage/$path';
   }
 
   // 3. Kita langsung PAKSA tambahkan interceptor di sini menggunakan cascade (..)

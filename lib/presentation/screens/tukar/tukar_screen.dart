@@ -8,7 +8,6 @@ import '../../widgets/common/app_button.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
 import '../../../../core/network/api_client.dart'; // Sesuaikan path jika perlu
 
-
 class TukarScreen extends ConsumerStatefulWidget {
   const TukarScreen({super.key});
 
@@ -18,7 +17,9 @@ class TukarScreen extends ConsumerStatefulWidget {
 
 class _TukarScreenState extends ConsumerState<TukarScreen> {
   final _nominalController = TextEditingController();
-  final _noRekController = TextEditingController(); // 👈 Tambahkan ini
+  final _noRekController = TextEditingController();
+
+  bool _isLoadingTarikDana = false; // 👈 Tambahkan ini
 
   // State untuk melacak pilihan metode pencairan
   String _selectedMetode = 'Cash'; // 'Cash' atau 'Transfer'
@@ -27,7 +28,13 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
 
   // Daftar opsi Bank dan e-Wallet
   final List<String> _listBank = ['BCA', 'Mandiri', 'BNI', 'BRI', 'BSI'];
-  final List<String> _listEwallet = ['Dana', 'Gopay', 'OVO', 'LinkAja', 'ShopeePay'];
+  final List<String> _listEwallet = [
+    'Dana',
+    'Gopay',
+    'OVO',
+    'LinkAja',
+    'ShopeePay',
+  ];
 
   @override
   void dispose() {
@@ -37,7 +44,9 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
   }
 
   Future<void> _handleTukarCash() async {
-    final nominal = int.tryParse(_nominalController.text.replaceAll('.', '').trim());
+    final nominal = int.tryParse(
+      _nominalController.text.replaceAll('.', '').trim(),
+    );
     if (nominal == null || nominal <= 0) {
       _showSnackbar('Masukkan nominal yang valid.', isError: true);
       return;
@@ -50,24 +59,47 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
     // Validasi tambahan untuk metode Transfer
     if (_selectedMetode == 'Transfer') {
       if (_selectedNamaBankEwallet == null) {
-        _showSnackbar('Silakan pilih Bank atau e-Wallet tujuan.', isError: true);
+        _showSnackbar(
+          'Silakan pilih Bank atau e-Wallet tujuan.',
+          isError: true,
+        );
         return;
       }
       if (_noRekController.text.trim().isEmpty) {
-        _showSnackbar('Nomor rekening atau nomor HP wajib diisi.', isError: true);
+        _showSnackbar(
+          'Nomor rekening atau nomor HP wajib diisi.',
+          isError: true,
+        );
         return;
       }
     }
 
-    final ok = await ref.read(tukarProvider.notifier).tukarCash(
+    setState(() {
+      _isLoadingTarikDana = true;
+    });
+
+    final ok = await ref
+        .read(tukarProvider.notifier)
+        .tukarCash(
           nominal: nominal,
           metode: _selectedMetode,
-          tipeTransfer: _selectedMetode == 'Transfer' ? _selectedTipeTransfer : null,
-          namaBankEwallet: _selectedMetode == 'Transfer' ? _selectedNamaBankEwallet : null,
-          nomorRekening: _selectedMetode == 'Transfer' ? _noRekController.text.trim() : null,
+          tipeTransfer: _selectedMetode == 'Transfer'
+              ? _selectedTipeTransfer
+              : null,
+          namaBankEwallet: _selectedMetode == 'Transfer'
+              ? _selectedNamaBankEwallet
+              : null,
+          nomorRekening: _selectedMetode == 'Transfer'
+              ? _noRekController.text.trim()
+              : null,
         );
 
     if (!mounted) return;
+
+    setState(() {
+      _isLoadingTarikDana = false;
+    });
+
     if (ok) {
       _nominalController.clear();
       _noRekController.clear();
@@ -104,13 +136,9 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
       appBar: AppBar(
         title: Text(
           'Bank Sampah',
-          style: AppTextStyles.headlineMd.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: AppTextStyles.headlineMd.copyWith(fontWeight: FontWeight.w800),
         ),
-        actions: [
-          const LoncengNotifikasi(), 
-        ],
+        actions: [const LoncengNotifikasi()],
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -188,21 +216,36 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.surfaceWhite,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.outlineVariant.withOpacity(0.35)),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withOpacity(0.35),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pencairan Dana', style: AppTextStyles.headlineMd.copyWith(fontWeight: FontWeight.w700)),
+                    Text(
+                      'Pencairan Dana',
+                      style: AppTextStyles.headlineMd.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'Tukar poin Anda menjadi uang tunai langsung atau transfer digital. Minimum penukaran 10.000 Pts (Rp 10.000).',
-                      style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
                     // ── PILIHAN METODE (CASH / TRANSFER) ──
-                    Text('Metode Pencairan', style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w700)),
+                    Text(
+                      'Metode Pencairan',
+                      style: AppTextStyles.labelMd.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: ['Cash', 'Transfer'].map((m) {
@@ -214,11 +257,14 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                             selected: isSelected,
                             onSelected: (_) => setState(() {
                               _selectedMetode = m;
-                              _selectedNamaBankEwallet = null; // Reset sub-pilihan
+                              _selectedNamaBankEwallet =
+                                  null; // Reset sub-pilihan
                             }),
                             selectedColor: AppColors.primary,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textMain,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textMain,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -231,7 +277,12 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                       const SizedBox(height: 16),
                       const Divider(),
                       const SizedBox(height: 12),
-                      Text('Tipe Transfer', style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w700)),
+                      Text(
+                        'Tipe Transfer',
+                        style: AppTextStyles.labelMd.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: ['Bank', 'e-Wallet'].map((t) {
@@ -243,11 +294,14 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                               selected: isSelected,
                               onSelected: (_) => setState(() {
                                 _selectedTipeTransfer = t;
-                                _selectedNamaBankEwallet = null; // Reset nama bank
+                                _selectedNamaBankEwallet =
+                                    null; // Reset nama bank
                               }),
                               selectedColor: AppColors.secondary,
                               labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : AppColors.textMain,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.textMain,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -255,26 +309,41 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                         }).toList(),
                       ),
                       const SizedBox(height: 14),
-                      
+
                       // Dropdown Pilih Bank atau e-Wallet
                       DropdownButtonFormField<String>(
                         value: _selectedNamaBankEwallet,
-                        hint: Text(_selectedTipeTransfer == 'Bank' ? 'Pilih Bank Tujuan' : 'Pilih e-Wallet Tujuan'),
+                        hint: Text(
+                          _selectedTipeTransfer == 'Bank'
+                              ? 'Pilih Bank Tujuan'
+                              : 'Pilih e-Wallet Tujuan',
+                        ),
                         style: AppTextStyles.bodyMd,
-                        items: (_selectedTipeTransfer == 'Bank' ? _listBank : _listEwallet)
-                            .map((name) => DropdownMenuItem(value: name, child: Text(name)))
-                            .toList(),
-                        onChanged: (val) => setState(() => _selectedNamaBankEwallet = val),
+                        items:
+                            (_selectedTipeTransfer == 'Bank'
+                                    ? _listBank
+                                    : _listEwallet)
+                                .map(
+                                  (name) => DropdownMenuItem(
+                                    value: name,
+                                    child: Text(name),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedNamaBankEwallet = val),
                       ),
                       const SizedBox(height: 14),
-                      
+
                       // Input Nomor Rekening / Nomor HP
                       TextFormField(
                         controller: _noRekController,
                         keyboardType: TextInputType.number,
                         style: AppTextStyles.bodyMd,
                         decoration: InputDecoration(
-                          hintText: _selectedTipeTransfer == 'Bank' ? 'Masukkan nomor rekening' : 'Masukkan nomor HP e-Wallet (contoh: 0812...)',
+                          hintText: _selectedTipeTransfer == 'Bank'
+                              ? 'Masukkan nomor rekening'
+                              : 'Masukkan nomor HP e-Wallet (contoh: 0812...)',
                           prefixIcon: const Icon(Icons.pin_rounded, size: 20),
                         ),
                       ),
@@ -284,18 +353,26 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                     TextFormField(
                       controller: _nominalController,
                       keyboardType: TextInputType.number,
-                      style: AppTextStyles.bodyLg.copyWith(fontWeight: FontWeight.w500),
+                      style: AppTextStyles.bodyLg.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Nominal pencairan',
                         prefixText: 'Rp  ',
-                        prefixStyle: AppTextStyles.bodyLg.copyWith(color: AppColors.onSurfaceVariant),
+                        prefixStyle: AppTextStyles.bodyLg.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     AppButton(
                       label: 'Tarik Dana',
-                      isLoading: state.isSubmitting,
-                      prefixIcon: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 18),
+                      isLoading: _isLoadingTarikDana,
+                      prefixIcon: const Icon(
+                        Icons.account_balance_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                       onPressed: state.isSubmitting ? null : _handleTukarCash,
                     ),
                   ],
@@ -466,9 +543,11 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
 
 // ── Produk Card ───────────────────────────────────────────────────────────────
 
+// ── Produk Card ───────────────────────────────────────────────────────────────
+
 class _ProdukCard extends StatefulWidget {
   final ProdukModel produk;
-  final bool isSubmitting;
+  final bool isSubmitting; // Bawaan dari global, biarkan saja
   final int totalPoin;
   final Future<void> Function(int qty) onTukar;
 
@@ -486,9 +565,11 @@ class _ProdukCard extends StatefulWidget {
 class _ProdukCardState extends State<_ProdukCard> {
   int _qty = 1;
 
+  // 👇 1. TAMBAHKAN VARIABEL LOKAL INI 👇
+  bool _isLoadingLokal = false;
+
   bool get _canAfford => widget.totalPoin >= widget.produk.biayaPoin * _qty;
 
-  // 👇 1. FUNGSI DIALOG KONFIRMASI DITAMBAHKAN DI SINI 👇
   Future<void> _konfirmasiTukar() async {
     final p = widget.produk;
     final totalHargaPoin = p.biayaPoin * _qty;
@@ -507,31 +588,47 @@ class _ProdukCardState extends State<_ProdukCard> {
               const SizedBox(width: 8),
               Text(
                 'Konfirmasi',
-                style: AppTextStyles.headlineMd.copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.headlineMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
           content: RichText(
             text: TextSpan(
-              style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.onSurfaceVariant,
+                height: 1.5,
+              ),
               children: [
-                const TextSpan(text: 'Anda yakin ingin melakukan penukaran pada produk '),
+                const TextSpan(
+                  text: 'Anda yakin ingin melakukan penukaran pada produk ',
+                ),
                 TextSpan(
                   text: p.nama,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 if (_qty > 1) ...[
                   const TextSpan(text: ' sebanyak '),
                   TextSpan(
                     text: '$_qty pcs',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ],
                 const TextSpan(text: ' seharga '),
                 TextSpan(
-                  // Menampilkan total poin sesuai dengan jumlah barang (qty)
-                  text: '${totalHargaPoin.toString().replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), '.')} Poin',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  text:
+                      '${totalHargaPoin.toString().replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), '.')} Poin',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const TextSpan(text: '?'),
               ],
@@ -542,7 +639,9 @@ class _ProdukCardState extends State<_ProdukCard> {
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(
                 'Batal',
-                style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
+                style: AppTextStyles.labelMd.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ),
             ElevatedButton(
@@ -555,27 +654,39 @@ class _ProdukCardState extends State<_ProdukCard> {
                 ),
                 elevation: 0,
               ),
-              child: const Text('Ya, Tukar', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Ya, Tukar',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
       },
     );
 
-    // Jika pengguna menekan "Ya, Tukar", lanjutkan ke proses backend
+    // 👇 2. PERBAIKAN LOGIKA LOADING LOKAL SAAT DIKONFIRMASI 👇
     if (confirm == true) {
-      widget.onTukar(_qty);
+      setState(() {
+        _isLoadingLokal = true; // Nyalakan loading HANYA untuk kartu ini
+      });
+
+      await widget.onTukar(_qty); // Tunggu proses API selesai
+
+      if (mounted) {
+        setState(() {
+          _isLoadingLokal = false; // Matikan loading setelah selesai
+        });
+      }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final p = widget.produk;
     final isHabis = p.isHabis;
 
-    // ─── PERBAIKAN LOGIKA GAMBAR DI SINI ───
     final finalImageUrl = ApiClient.getImageUrl(p.fotoUrl);
-
+    print('🔍 CEK URL SEMBAKO: $finalImageUrl');
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceWhite,
@@ -603,13 +714,19 @@ class _ProdukCardState extends State<_ProdukCard> {
                           top: Radius.circular(16),
                         ),
                         child: Image.network(
-                          finalImageUrl, // 👈 Memanggil URL yang sudah dibersihkan
+                          finalImageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: AppColors.outline,
-                            size: 40,
-                          ),
+                          errorBuilder: (context, error, stackTrace) {
+                        print('🚨 GAMBAR SEMBAKO GAGAL!');
+                        print('🚨 URL: $finalImageUrl');
+                        print('🚨 ALASAN: $error'); // Ini yang paling penting!
+                        
+                        return const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: AppColors.outline,
+                          size: 40,
+                        );
+                      },
                         ),
                       )
                     : const Icon(
@@ -732,9 +849,9 @@ class _ProdukCardState extends State<_ProdukCard> {
                         child: AppButton(
                           label: 'Tukar',
                           height: 42,
-                          isLoading: widget.isSubmitting,
-                          // 👇 PANGGIL FUNGSI KONFIRMASI DI SINI 👇
-                          onPressed: widget.isSubmitting || !_canAfford
+                          // 👇 3. GANTI WIDGET.ISSUBMITTING DENGAN VARIABEL LOKAL 👇
+                          isLoading: _isLoadingLokal,
+                          onPressed: _isLoadingLokal || !_canAfford
                               ? null
                               : _konfirmasiTukar,
                         ),

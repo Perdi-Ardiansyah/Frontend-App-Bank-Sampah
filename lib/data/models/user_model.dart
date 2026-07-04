@@ -10,8 +10,8 @@ class UserModel {
   final bool isVerified;
   final int totalPoin;
   final String? noHp;
-  final String? idNasabah; 
-  final String? fotoUrl;// contoh: BS-20231012
+  final String? idNasabah;
+  final String? fotoUrl; // contoh: BS-20231012
 
   const UserModel({
     required this.id,
@@ -29,29 +29,32 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     print('📦 DATA MENTAH DARI LARAVEL: $json');
     return UserModel(
-      id:           json['id'] as int,
-      username:     json['username'] as String,
-      namaLengkap:  json['nama_lengkap'] as String,
-      email:        json['email'] as String,
-      role:         json['role'] as String,
-      isVerified:   (json['is_verified'] == 1 || json['is_verified'] == true),
-      totalPoin:    json['total_poin'] as int? ?? 0,
-      noHp:         json['no_hp'] as String?,
-      idNasabah:    json['id_nasabah'] as String?,
-      fotoUrl: json['foto_profil'] != null ? 'http://10.0.2.2:8000/storage/${json['foto_profil']}' : null,
+      id: json['id'] as int,
+      username: json['username'] as String,
+      namaLengkap: json['nama_lengkap'] as String,
+      email: json['email'] as String,
+      role: json['role'] as String,
+      isVerified: (json['is_verified'] == 1 || json['is_verified'] == true),
+      totalPoin: json['total_poin'] as int? ?? 0,
+      noHp: json['no_hp'] as String?,
+      idNasabah: json['id_nasabah'] as String?,
+
+      // 👇 KEMBALIKAN MENJADI SEDERHANA SEPERTI INI 👇
+      fotoUrl: json['foto_profil'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id':           id,
-    'username':     username,
+    'id': id,
+    'username': username,
     'nama_lengkap': namaLengkap,
-    'email':        email,
-    'role':         role,
-    'is_verified':  isVerified,
-    'total_poin':   totalPoin,
-    'no_hp':        noHp,
-    'id_nasabah':   idNasabah,
+    'email': email,
+    'role': role,
+    'is_verified': isVerified,
+    'total_poin': totalPoin,
+    'no_hp': noHp,
+    'id_nasabah': idNasabah,
+    'foto_profil': fotoUrl, // 👇 TAMBAHKAN BARIS INI 👇
   };
 
   /// Simpan ke String untuk disimpan di secure storage
