@@ -6,7 +6,7 @@ import '/../../data/providers/nasabah_provider.dart';
 import '/../../data/models/produk_model.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/lonceng_notifikasi.dart';
-import '../../../../core/network/api_client.dart'; // Sesuaikan path jika perlu
+import '../../../../core/network/api_client.dart'; 
 
 class TukarScreen extends ConsumerStatefulWidget {
   const TukarScreen({super.key});
@@ -17,29 +17,11 @@ class TukarScreen extends ConsumerStatefulWidget {
 
 class _TukarScreenState extends ConsumerState<TukarScreen> {
   final _nominalController = TextEditingController();
-  final _noRekController = TextEditingController();
-
-  bool _isLoadingTarikDana = false; // 👈 Tambahkan ini
-
-  // State untuk melacak pilihan metode pencairan
-  String _selectedMetode = 'Cash'; // 'Cash' atau 'Transfer'
-  String _selectedTipeTransfer = 'Bank'; // 'Bank' atau 'e-Wallet'
-  String? _selectedNamaBankEwallet;
-
-  // Daftar opsi Bank dan e-Wallet
-  final List<String> _listBank = ['BCA', 'Mandiri', 'BNI', 'BRI', 'BSI'];
-  final List<String> _listEwallet = [
-    'Dana',
-    'Gopay',
-    'OVO',
-    'LinkAja',
-    'ShopeePay',
-  ];
+  bool _isLoadingTarikDana = false;
 
   @override
   void dispose() {
     _nominalController.dispose();
-    _noRekController.dispose(); // 👈 Tambahkan ini
     super.dispose();
   }
 
@@ -56,42 +38,17 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
       return;
     }
 
-    // Validasi tambahan untuk metode Transfer
-    if (_selectedMetode == 'Transfer') {
-      if (_selectedNamaBankEwallet == null) {
-        _showSnackbar(
-          'Silakan pilih Bank atau e-Wallet tujuan.',
-          isError: true,
-        );
-        return;
-      }
-      if (_noRekController.text.trim().isEmpty) {
-        _showSnackbar(
-          'Nomor rekening atau nomor HP wajib diisi.',
-          isError: true,
-        );
-        return;
-      }
-    }
-
     setState(() {
       _isLoadingTarikDana = true;
     });
 
-    final ok = await ref
-        .read(tukarProvider.notifier)
-        .tukarCash(
+    // Melakukan request pencairan dengan metode mutlak 'Cash'
+    final ok = await ref.read(tukarProvider.notifier).tukarCash(
           nominal: nominal,
-          metode: _selectedMetode,
-          tipeTransfer: _selectedMetode == 'Transfer'
-              ? _selectedTipeTransfer
-              : null,
-          namaBankEwallet: _selectedMetode == 'Transfer'
-              ? _selectedNamaBankEwallet
-              : null,
-          nomorRekening: _selectedMetode == 'Transfer'
-              ? _noRekController.text.trim()
-              : null,
+          metode: 'Cash',
+          tipeTransfer: null,
+          namaBankEwallet: null,
+          nomorRekening: null,
         );
 
     if (!mounted) return;
@@ -102,11 +59,6 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
 
     if (ok) {
       _nominalController.clear();
-      _noRekController.clear();
-      setState(() {
-        _selectedNamaBankEwallet = null;
-        _selectedMetode = 'Cash';
-      });
       _showSnackbar('Permintaan pencairan berhasil dikirim!');
     } else {
       final err = ref.read(tukarProvider).error;
@@ -231,7 +183,7 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Tukar poin Anda menjadi uang tunai langsung atau transfer digital. Minimum penukaran 10.000 Pts (Rp 10.000).',
+                      'Tukar poin Anda menjadi uang tunai langsung melalui loket operasional. Minimum penukaran 10.000 Pts (Rp 10.000).',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
                         height: 1.5,
@@ -239,7 +191,6 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // ── PILIHAN METODE (CASH / TRANSFER) ──
                     Text(
                       'Metode Pencairan',
                       style: AppTextStyles.labelMd.copyWith(
@@ -247,109 +198,19 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: ['Cash', 'Transfer'].map((m) {
-                        final isSelected = _selectedMetode == m;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: ChoiceChip(
-                            label: Text(m),
-                            selected: isSelected,
-                            onSelected: (_) => setState(() {
-                              _selectedMetode = m;
-                              _selectedNamaBankEwallet =
-                                  null; // Reset sub-pilihan
-                            }),
-                            selectedColor: AppColors.primary,
-                            labelStyle: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppColors.textMain,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                    // Hanya menampilkan satu chip permanen (Cash)
+                    ChoiceChip(
+                      label: const Text('Cash / Tunai'),
+                      selected: true,
+                      selectedColor: AppColors.primary,
+                      labelStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      onSelected: (_) {},
                     ),
-
-                    // ── FORM KONDISIONAL JIKA TRANSFER DIPILIH ──
-                    if (_selectedMetode == 'Transfer') ...[
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Tipe Transfer',
-                        style: AppTextStyles.labelMd.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: ['Bank', 'e-Wallet'].map((t) {
-                          final isSelected = _selectedTipeTransfer == t;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: ChoiceChip(
-                              label: Text(t),
-                              selected: isSelected,
-                              onSelected: (_) => setState(() {
-                                _selectedTipeTransfer = t;
-                                _selectedNamaBankEwallet =
-                                    null; // Reset nama bank
-                              }),
-                              selectedColor: AppColors.secondary,
-                              labelStyle: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : AppColors.textMain,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Dropdown Pilih Bank atau e-Wallet
-                      DropdownButtonFormField<String>(
-                        value: _selectedNamaBankEwallet,
-                        hint: Text(
-                          _selectedTipeTransfer == 'Bank'
-                              ? 'Pilih Bank Tujuan'
-                              : 'Pilih e-Wallet Tujuan',
-                        ),
-                        style: AppTextStyles.bodyMd,
-                        items:
-                            (_selectedTipeTransfer == 'Bank'
-                                    ? _listBank
-                                    : _listEwallet)
-                                .map(
-                                  (name) => DropdownMenuItem(
-                                    value: name,
-                                    child: Text(name),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (val) =>
-                            setState(() => _selectedNamaBankEwallet = val),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Input Nomor Rekening / Nomor HP
-                      TextFormField(
-                        controller: _noRekController,
-                        keyboardType: TextInputType.number,
-                        style: AppTextStyles.bodyMd,
-                        decoration: InputDecoration(
-                          hintText: _selectedTipeTransfer == 'Bank'
-                              ? 'Masukkan nomor rekening'
-                              : 'Masukkan nomor HP e-Wallet (contoh: 0812...)',
-                          prefixIcon: const Icon(Icons.pin_rounded, size: 20),
-                        ),
-                      ),
-                    ],
-
                     const SizedBox(height: 16),
+
                     TextFormField(
                       controller: _nominalController,
                       keyboardType: TextInputType.number,
@@ -446,17 +307,16 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
                       isSubmitting: state.isSubmitting,
                       totalPoin: dashboard.totalPoin,
                       onTukar: (qty) async {
+                        // Memicu request API penukaran sembako
                         final ok = await ref
                             .read(tukarProvider.notifier)
                             .tukarProduk(produkId: p.id, jumlah: qty);
                         if (!mounted) return;
                         if (ok) {
-                          _showSnackbar('Penukaran berhasil!');
+                          _showSnackbar('Permintaan penukaran diajukan! Menunggu persetujuan admin.');
                         } else {
                           final err = ref.read(tukarProvider).error;
-                          // Saldo tidak cukup → tampilkan dialog
-                          if (err != null &&
-                              err.toLowerCase().contains('cukup')) {
+                          if (err != null && err.toLowerCase().contains('cukup')) {
                             _showInsufficientDialog();
                           } else {
                             _showSnackbar(
@@ -494,7 +354,7 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
               Container(
                 width: 60,
                 height: 60,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.errorContainer,
                   shape: BoxShape.circle,
                 ),
@@ -541,13 +401,9 @@ class _TukarScreenState extends ConsumerState<TukarScreen> {
   }
 }
 
-// ── Produk Card ───────────────────────────────────────────────────────────────
-
-// ── Produk Card ───────────────────────────────────────────────────────────────
-
 class _ProdukCard extends StatefulWidget {
   final ProdukModel produk;
-  final bool isSubmitting; // Bawaan dari global, biarkan saja
+  final bool isSubmitting;
   final int totalPoin;
   final Future<void> Function(int qty) onTukar;
 
@@ -564,8 +420,6 @@ class _ProdukCard extends StatefulWidget {
 
 class _ProdukCardState extends State<_ProdukCard> {
   int _qty = 1;
-
-  // 👇 1. TAMBAHKAN VARIABEL LOKAL INI 👇
   bool _isLoadingLokal = false;
 
   bool get _canAfford => widget.totalPoin >= widget.produk.biayaPoin * _qty;
@@ -602,7 +456,7 @@ class _ProdukCardState extends State<_ProdukCard> {
               ),
               children: [
                 const TextSpan(
-                  text: 'Anda yakin ingin melakukan penukaran pada produk ',
+                  text: 'Anda yakin ingin mengajukan penukaran produk ',
                 ),
                 TextSpan(
                   text: p.nama,
@@ -630,7 +484,7 @@ class _ProdukCardState extends State<_ProdukCard> {
                     color: AppColors.primary,
                   ),
                 ),
-                const TextSpan(text: '?'),
+                const TextSpan(text: '?\n\n*Permintaan membutuhkan persetujuan administrasi.'),
               ],
             ),
           ),
@@ -655,7 +509,7 @@ class _ProdukCardState extends State<_ProdukCard> {
                 elevation: 0,
               ),
               child: const Text(
-                'Ya, Tukar',
+                'Ajukan Penukaran',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -664,17 +518,16 @@ class _ProdukCardState extends State<_ProdukCard> {
       },
     );
 
-    // 👇 2. PERBAIKAN LOGIKA LOADING LOKAL SAAT DIKONFIRMASI 👇
     if (confirm == true) {
       setState(() {
-        _isLoadingLokal = true; // Nyalakan loading HANYA untuk kartu ini
+        _isLoadingLokal = true;
       });
 
-      await widget.onTukar(_qty); // Tunggu proses API selesai
+      await widget.onTukar(_qty);
 
       if (mounted) {
         setState(() {
-          _isLoadingLokal = false; // Matikan loading setelah selesai
+          _isLoadingLokal = false;
         });
       }
     }
@@ -684,9 +537,8 @@ class _ProdukCardState extends State<_ProdukCard> {
   Widget build(BuildContext context) {
     final p = widget.produk;
     final isHabis = p.isHabis;
-
     final finalImageUrl = ApiClient.getImageUrl(p.fotoUrl);
-    print('🔍 CEK URL SEMBAKO: $finalImageUrl');
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceWhite,
@@ -696,7 +548,6 @@ class _ProdukCardState extends State<_ProdukCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
           Stack(
             children: [
               Container(
@@ -717,16 +568,12 @@ class _ProdukCardState extends State<_ProdukCard> {
                           finalImageUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                        print('🚨 GAMBAR SEMBAKO GAGAL!');
-                        print('🚨 URL: $finalImageUrl');
-                        print('🚨 ALASAN: $error'); // Ini yang paling penting!
-                        
-                        return const Icon(
-                          Icons.image_not_supported_outlined,
-                          color: AppColors.outline,
-                          size: 40,
-                        );
-                      },
+                            return const Icon(
+                              Icons.image_not_supported_outlined,
+                              color: AppColors.outline,
+                              size: 40,
+                            );
+                          },
                         ),
                       )
                     : const Icon(
@@ -808,7 +655,6 @@ class _ProdukCardState extends State<_ProdukCard> {
                 if (!isHabis) ...[
                   Row(
                     children: [
-                      // Qty control
                       Container(
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -849,7 +695,6 @@ class _ProdukCardState extends State<_ProdukCard> {
                         child: AppButton(
                           label: 'Tukar',
                           height: 42,
-                          // 👇 3. GANTI WIDGET.ISSUBMITTING DENGAN VARIABEL LOKAL 👇
                           isLoading: _isLoadingLokal,
                           onPressed: _isLoadingLokal || !_canAfford
                               ? null

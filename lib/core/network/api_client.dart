@@ -17,8 +17,8 @@ class ApiClient {
   ApiClient._();
 
   // 1. Variabel utama host (Domain Hosting Anda)
-  static const String serverUrl = 'https://banksampahkita.kotapintar.my.id';
-  // static const String serverUrl = 'http://10.0.2.2:8000';
+  // static const String serverUrl = 'https://banksampahkita.kotapintar.my.id';
+  static const String serverUrl = 'http://10.0.2.2:8000';
   // URL untuk Dio (API Laravel biasanya wajib ada akhiran /api)
   static const String baseUrl = '$serverUrl/api';
 
@@ -27,9 +27,13 @@ class ApiClient {
     if (path == null || path.isEmpty) return '';
 
     // 1. SAPU BERSIH: Paksa ubah semua localhost menjadi domain asli cPanel Anda
-    path = path.replaceAll('http://10.0.2.2:8000', 'https://banksampahkita.kotapintar.my.id');
-    path = path.replaceAll('http://localhost:8000', 'https://banksampahkita.kotapintar.my.id');
-    path = path.replaceAll('http://127.0.0.1:8000', 'https://banksampahkita.kotapintar.my.id');
+
+    path = path.replaceAll('http://10.0.2.2:8000', 'http://10.0.2.2:8000');
+    path = path.replaceAll('http://localhost:8000', 'http://10.0.2.2:8000');
+    path = path.replaceAll('http://127.0.0.1:8000', 'http://10.0.2.2:8000');
+    // path = path.replaceAll('http://10.0.2.2:8000', 'https://banksampahkita.kotapintar.my.id');
+    // path = path.replaceAll('http://localhost:8000', 'https://banksampahkita.kotapintar.my.id');
+    // path = path.replaceAll('http://127.0.0.1:8000', 'https://banksampahkita.kotapintar.my.id');
 
     // 2. Jika setelah diganti jalurnya sudah berawalan http yang benar, langsung tampilkan
     if (path.startsWith('http')) {
@@ -38,7 +42,9 @@ class ApiClient {
 
     // 3. Jika data dari database hanya berupa jalur pendek (contoh: kategori/kaca.jpg)
     // KITA PAKSA PAKAI DOMAIN CPANEL, bukan variabel lagi.
-    String domain = 'https://banksampahkita.kotapintar.my.id';
+    // String domain = 'https://banksampahkita.kotapintar.my.id';
+    String domain = 'http://10.0.2.2:8000';
+
     
     if (path.startsWith('/')) {
       path = path.substring(1); 

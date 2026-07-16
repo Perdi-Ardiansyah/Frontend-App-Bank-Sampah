@@ -5,8 +5,6 @@ import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
 import 'dart:io';
 
-
-
 // ── Service Provider ───────────────────────────────────────────────────────
 final adminServiceProvider = Provider<AdminService>((ref) => AdminService());
 
@@ -282,7 +280,7 @@ class PencairanAdminModel {
   final int id;
   final String namaNasabah;
   final String tanggal;
-  final String status; 
+  final String status;
   final int nominal;
   final String? metodeCash;
   final String? noRekening;
@@ -303,7 +301,8 @@ class PencairanAdminModel {
     if (namaNasabah.isEmpty) return '?';
     List<String> words = namaNasabah.trim().split(' ');
     if (words.length == 1) return words[0].substring(0, 1).toUpperCase();
-    return (words[0].substring(0, 1) + words[words.length - 1].substring(0, 1)).toUpperCase();
+    return (words[0].substring(0, 1) + words[words.length - 1].substring(0, 1))
+        .toUpperCase();
   }
 
   String get nominalFormatted {
@@ -315,20 +314,30 @@ class PencairanAdminModel {
       result = s[i] + result;
       count++;
     }
-    return 'Rp $result'; 
+    return 'Rp $result';
   }
 
   factory PencairanAdminModel.fromJson(Map<String, dynamic> json) {
     print('Intip Data API Admin: Catatan = ${json['catatan']}');
     return PencairanAdminModel(
       id: json['id'] ?? 0,
-      namaNasabah: json['nasabah']?['nama_lengkap'] ?? json['nama_nasabah'] ?? 'Tanpa Nama',
-      tanggal: json['created_at'] != null ? json['created_at'].toString().split('T')[0] : '-',
+      namaNasabah:
+          json['nasabah']?['nama_lengkap'] ??
+          json['nama_nasabah'] ??
+          'Tanpa Nama',
+      tanggal: json['created_at'] != null
+          ? json['created_at'].toString().split('T')[0]
+          : '-',
       status: json['status'] ?? 'pending',
-      nominal: int.tryParse(json['nominal']?.toString() ?? json['jumlah']?.toString() ?? '0') ?? 0,
+      nominal:
+          int.tryParse(
+            json['nominal']?.toString() ?? json['jumlah']?.toString() ?? '0',
+          ) ??
+          0,
       metodeCash: json['metode'] ?? json['metode_pencairan'],
       noRekening: json['no_rekening'] ?? json['rekening'],
-      catatan: json['catatan'] as String?,// 👈 Ambil data catatan dari API Laravel
+      catatan:
+          json['catatan'] as String?, // 👈 Ambil data catatan dari API Laravel
     );
   }
 }
@@ -350,7 +359,9 @@ class PencairanAdminState {
 
   // Menghitung otomatis total nominal yang statusnya masih 'pending'
   String get totalTertundaFormatted {
-    final total = data.where((e) => e.status == 'pending').fold(0, (sum, item) => sum + item.nominal);
+    final total = data
+        .where((e) => e.status == 'pending')
+        .fold(0, (sum, item) => sum + item.nominal);
     final s = total.toString();
     String result = '';
     int count = 0;
@@ -388,17 +399,23 @@ class PencairanAdminNotifier extends StateNotifier<PencairanAdminState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final res = await ApiClient.instance.get('/admin/pencairan');
-      
+
       List<dynamic> rawData = [];
-      if (res.data is List) rawData = res.data;
-      else if (res.data is Map && res.data.containsKey('data')) rawData = res.data['data'];
-      else if (res.data is Map) rawData = res.data.values.toList();
+      if (res.data is List)
+        rawData = res.data;
+      else if (res.data is Map && res.data.containsKey('data'))
+        rawData = res.data['data'];
+      else if (res.data is Map)
+        rawData = res.data.values.toList();
 
       final list = rawData.map((e) => PencairanAdminModel.fromJson(e)).toList();
       state = state.copyWith(isLoading: false, data: list);
     } catch (e) {
       print('🚨 ERROR FETCH PENCAIRAN: $e');
-      state = state.copyWith(isLoading: false, error: 'Gagal memuat data pencairan.');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Gagal memuat data pencairan.',
+      );
     }
   }
 
@@ -411,7 +428,11 @@ class PencairanAdminNotifier extends StateNotifier<PencairanAdminState> {
       return true;
     } catch (e) {
       print('🚨 ERROR SELESAI PENCAIRAN: $e');
-      state = state.copyWith(isSubmitting: false, processingId: 0, error: 'Gagal menyetujui pencairan.');
+      state = state.copyWith(
+        isSubmitting: false,
+        processingId: 0,
+        error: 'Gagal menyetujui pencairan.',
+      );
       return false;
     }
   }
@@ -425,15 +446,19 @@ class PencairanAdminNotifier extends StateNotifier<PencairanAdminState> {
       return true;
     } catch (e) {
       print('🚨 ERROR TOLAK PENCAIRAN: $e');
-      state = state.copyWith(isSubmitting: false, error: 'Gagal menolak pencairan.');
+      state = state.copyWith(
+        isSubmitting: false,
+        error: 'Gagal menolak pencairan.',
+      );
       return false;
     }
   }
 }
 
-final pencairanAdminProvider = StateNotifierProvider<PencairanAdminNotifier, PencairanAdminState>((ref) {
-  return PencairanAdminNotifier();
-});
+final pencairanAdminProvider =
+    StateNotifierProvider<PencairanAdminNotifier, PencairanAdminState>((ref) {
+      return PencairanAdminNotifier();
+    });
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LAPORAN PROVIDER
@@ -910,7 +935,9 @@ class NotifikasiModel {
       pesan: json['pesan'] ?? '-',
       tipe: json['tipe'] ?? 'sistem',
       isRead: json['is_read'] == 1 || json['is_read'] == true,
-      tanggal: json['created_at'] != null ? json['created_at'].toString().split('T')[0] : '',
+      tanggal: json['created_at'] != null
+          ? json['created_at'].toString().split('T')[0]
+          : '',
     );
   }
 }
@@ -947,16 +974,23 @@ class NotifikasiNotifier extends StateNotifier<NotifikasiState> {
   Future<void> fetch() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await ApiClient.instance.get('/admin/notifikasi'); // Sesuaikan endpoint Laravel Anda
+      final res = await ApiClient.instance.get(
+        '/admin/notifikasi',
+      ); // Sesuaikan endpoint Laravel Anda
       List<dynamic> rawData = [];
-      if (res.data is List) rawData = res.data;
-      else if (res.data is Map && res.data.containsKey('data')) rawData = res.data['data'];
+      if (res.data is List)
+        rawData = res.data;
+      else if (res.data is Map && res.data.containsKey('data'))
+        rawData = res.data['data'];
 
       final list = rawData.map((e) => NotifikasiModel.fromJson(e)).toList();
       state = state.copyWith(isLoading: false, data: list);
     } catch (e) {
       print('🚨 ERROR FETCH NOTIFIKASI: $e');
-      state = state.copyWith(isLoading: false, error: 'Gagal memuat notifikasi.');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Gagal memuat notifikasi.',
+      );
     }
   }
 
@@ -964,9 +998,18 @@ class NotifikasiNotifier extends StateNotifier<NotifikasiState> {
     try {
       await ApiClient.instance.patch('/admin/notifikasi/baca');
       // Update state lokal agar isRead menjadi true semua tanpa harus loading ulang dari API
-      final updatedData = state.data.map((n) => NotifikasiModel(
-        id: n.id, judul: n.judul, pesan: n.pesan, tipe: n.tipe, tanggal: n.tanggal, isRead: true,
-      )).toList();
+      final updatedData = state.data
+          .map(
+            (n) => NotifikasiModel(
+              id: n.id,
+              judul: n.judul,
+              pesan: n.pesan,
+              tipe: n.tipe,
+              tanggal: n.tanggal,
+              isRead: true,
+            ),
+          )
+          .toList();
       state = state.copyWith(data: updatedData);
     } catch (e) {
       print('🚨 ERROR TANDAI DIBACA: $e');
@@ -974,9 +1017,10 @@ class NotifikasiNotifier extends StateNotifier<NotifikasiState> {
   }
 }
 
-final notifikasiProvider = StateNotifierProvider<NotifikasiNotifier, NotifikasiState>((ref) {
-  return NotifikasiNotifier();
-});
+final notifikasiProvider =
+    StateNotifierProvider<NotifikasiNotifier, NotifikasiState>((ref) {
+      return NotifikasiNotifier();
+    });
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LAPORAN ADMIN PROVIDER
@@ -1000,9 +1044,11 @@ class LaporanAdminData {
     final rawData = json['data'] as List<dynamic>? ?? [];
 
     return LaporanAdminData(
-      totalTransaksi: int.tryParse(stats['total_transaksi']?.toString() ?? '0') ?? 0,
+      totalTransaksi:
+          int.tryParse(stats['total_transaksi']?.toString() ?? '0') ?? 0,
       volumeKg: double.tryParse(stats['volume_kg']?.toString() ?? '0') ?? 0.0,
-      nilaiKonversi: int.tryParse(stats['nilai_konversi']?.toString() ?? '0') ?? 0,
+      nilaiKonversi:
+          int.tryParse(stats['nilai_konversi']?.toString() ?? '0') ?? 0,
       transaksi: rawData.map((e) => e as Map<String, dynamic>).toList(),
     );
   }
@@ -1041,11 +1087,18 @@ class LaporanAdminState {
 }
 
 class LaporanAdminNotifier extends StateNotifier<LaporanAdminState> {
-  LaporanAdminNotifier() : super(LaporanAdminState(
-    // Default rentang tanggal: Hari pertama bulan ini sampai hari ini
-    dari: DateTime(DateTime.now().year, DateTime.now().month, 1).toString().split(' ')[0],
-    sampai: DateTime.now().toString().split(' ')[0],
-  )) {
+  LaporanAdminNotifier()
+    : super(
+        LaporanAdminState(
+          // Default rentang tanggal: Hari pertama bulan ini sampai hari ini
+          dari: DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+            1,
+          ).toString().split(' ')[0],
+          sampai: DateTime.now().toString().split(' ')[0],
+        ),
+      ) {
     fetch();
   }
 
@@ -1053,12 +1106,19 @@ class LaporanAdminNotifier extends StateNotifier<LaporanAdminState> {
     final tglDari = dari ?? state.dari;
     final tglSampai = sampai ?? state.sampai;
 
-    state = state.copyWith(isLoading: true, dari: tglDari, sampai: tglSampai, error: null);
+    state = state.copyWith(
+      isLoading: true,
+      dari: tglDari,
+      sampai: tglSampai,
+      error: null,
+    );
 
     try {
       // Mengirimkan parameter filter ke URL (contoh: /admin/laporan?dari=2026-06-01&sampai=2026-06-30)
-      final res = await ApiClient.instance.get('/admin/laporan?dari=$tglDari&sampai=$tglSampai');
-      
+      final res = await ApiClient.instance.get(
+        '/admin/laporan?dari=$tglDari&sampai=$tglSampai',
+      );
+
       if (res.data != null && res.data is Map<String, dynamic>) {
         final laporanData = LaporanAdminData.fromJson(res.data);
         state = state.copyWith(isLoading: false, data: laporanData);
@@ -1067,11 +1127,199 @@ class LaporanAdminNotifier extends StateNotifier<LaporanAdminState> {
       }
     } catch (e) {
       print('🚨 ERROR FETCH LAPORAN: $e');
-      state = state.copyWith(isLoading: false, error: 'Gagal memuat data laporan.');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Gagal memuat data laporan.',
+      );
     }
   }
 }
 
-final laporanAdminProvider = StateNotifierProvider<LaporanAdminNotifier, LaporanAdminState>((ref) {
-  return LaporanAdminNotifier();
+final laporanAdminProvider =
+    StateNotifierProvider<LaporanAdminNotifier, LaporanAdminState>((ref) {
+      return LaporanAdminNotifier();
+    });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PENUKARAN ADMIN PROVIDER (TAMBAHAN BARU)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class PenukaranAdminModel {
+  final int id;
+  final String namaNasabah;
+  final String tanggal;
+  final String status;
+  final int nominal; // Bisa merepresentasikan total poin yang ditukar
+  final String? catatan;
+
+  PenukaranAdminModel({
+    required this.id,
+    required this.namaNasabah,
+    required this.tanggal,
+    required this.status,
+    required this.nominal,
+    this.catatan,
+  });
+
+  String get initials {
+    if (namaNasabah.isEmpty) return '?';
+    List<String> words = namaNasabah.trim().split(' ');
+    if (words.length == 1) return words[0].substring(0, 1).toUpperCase();
+    return (words[0].substring(0, 1) + words[words.length - 1].substring(0, 1))
+        .toUpperCase();
+  }
+
+  // Format tampilan nominal/poin (contoh: 47100 -> 47.100 Poin atau Rp 47.100)
+  String get nominalFormatted {
+    final s = nominal.toString();
+    String result = '';
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      if (count > 0 && count % 3 == 0) result = '.$result';
+      result = s[i] + result;
+      count++;
+    }
+    return '$result Poin'; // 👈 Sesuaikan teks penutup (Poin / Rp) sesuai kebutuhan
+  }
+
+  factory PenukaranAdminModel.fromJson(Map<String, dynamic> json) {
+    return PenukaranAdminModel(
+      id: json['id'] ?? 0,
+      namaNasabah:
+          json['nasabah']?['nama_lengkap'] ??
+          json['nama_nasabah'] ??
+          'Tanpa Nama',
+      tanggal: json['created_at'] != null
+          ? json['created_at'].toString().split('T')[0]
+          : '-',
+      status: json['status'] ?? 'pending',
+      nominal: int.tryParse(
+            json['poin']?.toString() ?? json['total_poin']?.toString() ?? '0',
+          ) ?? 0,
+      catatan: json['catatan'] as String?, // Menyimpan rincian barang yang ditukar dari Laravel
+    );
+  }
+}
+
+class PenukaranAdminState {
+  final bool isLoading;
+  final bool isSubmitting;
+  final int processingId;
+  final List<PenukaranAdminModel> data;
+  final String? error;
+
+  const PenukaranAdminState({
+    this.isLoading = false,
+    this.isSubmitting = false,
+    this.processingId = 0,
+    this.data = const [],
+    this.error,
+  });
+
+  // Menghitung otomatis total poin/nominal penukaran yang masih 'pending'
+  String get totalTertundaFormatted {
+    final total = data
+        .where((e) => e.status == 'pending')
+        .fold(0, (sum, item) => sum + item.nominal);
+    final s = total.toString();
+    String result = '';
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      if (count > 0 && count % 3 == 0) result = '.$result';
+      result = s[i] + result;
+      count++;
+    }
+    return '$result Poin';
+  }
+
+  PenukaranAdminState copyWith({
+    bool? isLoading,
+    bool? isSubmitting,
+    int? processingId,
+    List<PenukaranAdminModel>? data,
+    String? error,
+  }) {
+    return PenukaranAdminState(
+      isLoading: isLoading ?? this.isLoading,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      processingId: processingId ?? this.processingId,
+      data: data ?? this.data,
+      error: error,
+    );
+  }
+}
+
+class PenukaranAdminNotifier extends StateNotifier<PenukaranAdminState> {
+  PenukaranAdminNotifier() : super(const PenukaranAdminState()) {
+    fetch();
+  }
+
+  Future<void> fetch() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      // 👈 Sesuaikan dengan nama endpoint index penukaran di Laravel Anda
+      final res = await ApiClient.instance.get('/admin/penukaran');
+
+      List<dynamic> rawData = [];
+      if (res.data is List) {
+        rawData = res.data;
+      } else if (res.data is Map && res.data.containsKey('data')) {
+        rawData = res.data['data'];
+      } else if (res.data is Map) {
+        rawData = res.data.values.toList();
+      }
+
+      final list = rawData.map((e) => PenukaranAdminModel.fromJson(e)).toList();
+      state = state.copyWith(isLoading: false, data: list);
+    } catch (e) {
+      print('🚨 ERROR FETCH PENUKARAN: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Gagal memuat data penukaran.',
+      );
+    }
+  }
+
+  Future<bool> selesaikan(int id) async {
+    state = state.copyWith(isSubmitting: true, processingId: id, error: null);
+    try {
+      // 👈 Endpoint menyetujui/menyelesaikan transaksi penukaran poin
+      await ApiClient.instance.post('/admin/penukaran/$id/selesai');
+      await fetch();
+      state = state.copyWith(isSubmitting: false, processingId: 0);
+      return true;
+    } catch (e) {
+      print('🚨 ERROR SETUJUI PENUKARAN: $e');
+      state = state.copyWith(
+        isSubmitting: false,
+        processingId: 0,
+        error: 'Gagal menyetujui penukaran.',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> tolak(int id) async {
+    state = state.copyWith(isSubmitting: true, processingId: id, error: null);
+    try {
+      // 👈 Endpoint menolak transaksi penukaran poin
+      await ApiClient.instance.post('/admin/penukaran/$id/tolak');
+      await fetch();
+      state = state.copyWith(isSubmitting: false, processingId: 0);
+      return true;
+    } catch (e) {
+      print('🚨 ERROR TOLAK PENUKARAN: $e');
+      state = state.copyWith(
+        isSubmitting: false,
+        processingId: 0,
+        error: 'Gagal menolak penukaran.',
+      );
+      return false;
+    }
+  }
+}
+
+final penukaranAdminProvider =
+    StateNotifierProvider<PenukaranAdminNotifier, PenukaranAdminState>((ref) {
+  return PenukaranAdminNotifier();
 });

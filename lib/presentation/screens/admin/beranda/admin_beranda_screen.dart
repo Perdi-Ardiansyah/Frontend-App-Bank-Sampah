@@ -1,3 +1,4 @@
+import 'package:bank_sampah_fiks/presentation/screens/admin/penukaran/admin_penukaran_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '/../../core/theme/app_colors.dart';
@@ -144,9 +145,19 @@ class AdminBerandaScreen extends ConsumerWidget {
                             ),
                           ),
                           _MenuTile(
-                            icon: Icons.manage_history_rounded,
-                            label: 'Log Aktivitas',
-                            onTap: () => onNavigate?.call(1),
+                            icon: Icons
+                                .currency_exchange_rounded, // Mengubah ikon agar lebih cocok dengan 'Penukaran'
+                            label:
+                                'Persetujuan Penukaran', // Mengubah label teks menu
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AdminPenukaranScreen(),
+                                ),
+                              );
+                            },
                           ),
                           _MenuTile(
                             icon: Icons.inventory_2_rounded,
