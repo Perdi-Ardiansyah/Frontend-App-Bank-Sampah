@@ -6,6 +6,7 @@ import '/../../core/theme/app_text_styles.dart';
 import '../../../../data/providers/admin_provider.dart';
 // Sesuaikan jumlah titik-titiknya dengan posisi folder Anda
 import '../notifikasi/admin_akun_screen.dart';
+import 'dart:async';
 
 class AdminLogScreen extends ConsumerStatefulWidget {
   const AdminLogScreen({super.key});
@@ -17,6 +18,24 @@ class AdminLogScreen extends ConsumerStatefulWidget {
 class _AdminLogScreenState extends ConsumerState<AdminLogScreen> {
   final _searchController = TextEditingController();
   int _currentPage = 1;
+  Timer? _timer; // 👈 1. Definisikan Timer
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Inisialisasi Timer (refresh tiap 10 detik)
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      ref.read(logAktivitasProvider.notifier).fetch();
+    });
+  }
+
+  @override
+  void dispose() {
+    // 3. Hapus Timer saat layar ditutup agar tidak terjadi memory leak
+    _timer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +47,7 @@ class _AdminLogScreenState extends ConsumerState<AdminLogScreen> {
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text('Log Aktivitas'), 
+        title: const Text('Log Aktivitas'),
         actions: const [
           CustomNotifBell(),
           SizedBox(width: 8), // Sedikit jarak
@@ -63,14 +82,14 @@ class _AdminLogScreenState extends ConsumerState<AdminLogScreen> {
   // Memisahkan logika body untuk menangani Custom State Anda
   Widget _buildBody(LogAktivitasState logState) {
     // 1. Tangani status Loading
-    if (logState.isLoading) {
+    if (logState.isLoading && logState.data.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
     // 2. Tangani status Error
-    if (logState.error != null) {
+    if (logState.error != null && logState.data.isEmpty) {
       return Center(
         child: Text(
           logState.error!,
@@ -82,174 +101,105 @@ class _AdminLogScreenState extends ConsumerState<AdminLogScreen> {
     // 3. Tangani Data Sukses
     final logs = logState.data;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.outlineVariant.withOpacity(0.3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with search
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Recent\nActivities',
-                      style: AppTextStyles.headlineMd.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _searchController,
-                      style: AppTextStyles.bodySm,
-                      decoration: InputDecoration(
-                        hintText: 'Search logs...',
-                        hintStyle: AppTextStyles.bodySm.copyWith(
-                          color: AppColors.outline.withOpacity(0.7),
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          size: 16,
-                          color: AppColors.outline,
-                        ),
-                        prefixIconConstraints: const BoxConstraints(
-                          minWidth: 40,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        isDense: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: AppColors.outlineVariant.withOpacity(0.4),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: AppColors.outlineVariant.withOpacity(0.4),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: AppColors.background,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        // Panggil provider untuk refresh data saat ditarik
+        await ref.read(logAktivitasProvider.notifier).fetch();
+      },
+      child: SingleChildScrollView(
+        physics:
+            const AlwaysScrollableScrollPhysics(), // Wajib agar bisa di-scroll & di-refresh
+        padding: const EdgeInsets.all(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withOpacity(0.3),
             ),
-
-            // Menampilkan Data Dinamis
-            if (logs.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Center(child: Text('Belum ada log aktivitas.')),
-              )
-            else
-              ...logs.map((log) {
-                // Menentukan ikon dan warna berdasarkan tipe log (opsional, bisa Anda sesuaikan)
-                Color avatarColor = AppColors.secondaryContainer;
-                IconData avatarIcon = Icons.history_rounded;
-                Color avatarIconColor = AppColors.secondary;
-
-                if (log.tipe == 'sistem') {
-                  avatarColor = AppColors.errorContainer;
-                  avatarIcon = Icons.settings_system_daydream;
-                  avatarIconColor = AppColors.error;
-                }
-
-                return _LogItem(
-                  avatarColor: avatarColor,
-                  avatarIcon: avatarIcon,
-                  avatarIconColor: avatarIconColor,
-                  // Menggunakan properti asli dari LogAktivitasModel
-                  title: log.admin,
-                  action: log.aksi,
-                  time: log
-                      .waktu, // Anda juga bisa menggunakan log.tanggal jika perlu
-                  detail: _TextDetail(
-                    text: log.aksi,
-                  ), // Karena tidak ada properti 'keterangan', saya pakai 'aksi'
-                  isLast: logs.last == log,
-                );
-              }).toList(),
-
-            // Pagination (Bisa dibuat dinamis nanti jika API mendukung pagination)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Text(
-                    'Showing ${_currentPage} of ${logs.length}\nentries',
-                    style: AppTextStyles.bodySm.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  _LogPageBtn(
-                    icon: Icons.chevron_left_rounded,
-                    onTap: _currentPage > 1
-                        ? () => setState(() => _currentPage--)
-                        : null,
-                  ),
-                  const SizedBox(width: 4),
-                  // Pagination Statis Sementara
-                  ...List.generate(3, (i) {
-                    final p = i + 1;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _currentPage = p),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: _currentPage == p
-                                ? AppColors.primary
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$p',
-                            style: AppTextStyles.labelMd.copyWith(
-                              color: _currentPage == p
-                                  ? Colors.white
-                                  : AppColors.textMain,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recent\nActivities',
+                        style: AppTextStyles.headlineMd.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    );
-                  }),
-                  const SizedBox(width: 4),
-                  _LogPageBtn(
-                    icon: Icons.chevron_right_rounded,
-                    onTap: () => setState(() => _currentPage++),
-                  ),
-                ],
+                    ),
+                    
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              // Menampilkan Data Log
+              if (logs.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: Text('Belum ada log aktivitas.')),
+                )
+              else
+                ...logs.map((log) {
+                  return _LogItem(
+                    avatarColor: log.tipe == 'sistem'
+                        ? AppColors.errorContainer
+                        : AppColors.secondaryContainer,
+                    avatarIcon: log.tipe == 'sistem'
+                        ? Icons.settings_system_daydream
+                        : Icons.history_rounded,
+                    avatarIconColor: log.tipe == 'sistem'
+                        ? AppColors.error
+                        : AppColors.secondary,
+                    title: log.admin,
+                    action: log.aksi,
+                    time: log.waktu,
+                    detail: _TextDetail(text: log.aksi),
+                    isLast: logs.last == log,
+                  );
+                }).toList(),
+
+              // Footer / Pagination Statis
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Showing ${logs.length} entries',
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    _LogPageBtn(icon: Icons.chevron_left_rounded, onTap: null),
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        '1',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    _LogPageBtn(icon: Icons.chevron_right_rounded, onTap: null),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
