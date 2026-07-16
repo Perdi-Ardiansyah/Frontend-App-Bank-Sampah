@@ -11,13 +11,26 @@ class NasabahService {
 
   /// Ambil total poin + 3 transaksi terakhir untuk HomeScreen
   /// GET /api/nasabah/dashboard
-  Future<({int totalPoin, List<dynamic> transaksiTerakhir})>
+  Future<
+    ({
+      int totalPoin,
+      List<dynamic> transaksiTerakhir,
+      double totalSetoran, // 👈 TAMBAHKAN PROPERTI RECORD BARU
+      String level, // 👈 TAMBAHKAN PROPERTI RECORD BARU
+    })
+  >
   getDashboard() async {
     final res = await _dio.get('/nasabah/dashboard');
     final data = res.data as Map<String, dynamic>;
+
     return (
-      totalPoin: data['total_poin'] as int,
-      transaksiTerakhir: data['transaksi_terakhir'] as List<dynamic>,
+      totalPoin: data['total_poin'] as int? ?? 0,
+      transaksiTerakhir:
+          data['transaksi_terakhir'] as List<dynamic>? ?? const [],
+      // 👇 PARSING DATA RESPONS BARU DARI LARAVEL 👇
+      totalSetoran:
+          double.tryParse(data['total_setoran']?.toString() ?? '0') ?? 0.0,
+      level: data['level'] as String? ?? 'Bronze',
     );
   }
 

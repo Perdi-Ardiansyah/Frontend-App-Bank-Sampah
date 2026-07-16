@@ -16,12 +16,17 @@ class DashboardState {
   final int totalPoin;
   final List<dynamic> transaksiTerakhir;
   final String? error;
+  // 👇 DUA PROPERTI BARU UNTUK LEVEL NASABAH 👇
+  final double totalSetoran; 
+  final String level;
 
   const DashboardState({
     this.isLoading = false,
     this.totalPoin = 0,
     this.transaksiTerakhir = const [],
     this.error,
+    this.totalSetoran = 0.0, // Default 0 kg
+    this.level = 'Bronze',   // Default level terendah
   });
 
   DashboardState copyWith({
@@ -29,12 +34,16 @@ class DashboardState {
     int? totalPoin,
     List<dynamic>? transaksiTerakhir,
     String? error,
+    double? totalSetoran,
+    String? level,
   }) =>
       DashboardState(
         isLoading:         isLoading ?? this.isLoading,
         totalPoin:         totalPoin ?? this.totalPoin,
         transaksiTerakhir: transaksiTerakhir ?? this.transaksiTerakhir,
         error:             error,
+        totalSetoran:      totalSetoran ?? this.totalSetoran,
+        level:             level ?? this.level,
       );
 
   /// Format totalPoin dengan separator koma: 24500 → "24,500"
@@ -56,6 +65,11 @@ class DashboardState {
     if (rp >= 1000)    return 'Rp ${(rp / 1000).toStringAsFixed(0)}rb';
     return 'Rp $rp';
   }
+
+  // 👇 GETTER BARU: Merapikan tampilan total berat sampah (Contoh: 12.5 kg) 👇
+  String get totalSetoranFormatted {
+    return '${totalSetoran.toStringAsFixed(1).replaceAll('.', ',')} kg';
+  }
 }
 
 class DashboardNotifier extends StateNotifier<DashboardState> {
@@ -69,10 +83,14 @@ class DashboardNotifier extends StateNotifier<DashboardState> {
     state = state.copyWith(isLoading: true);
     try {
       final result = await _service.getDashboard();
+      
+      // 👇 SESUAIKAN MAP DATA DARI RESULT SERVICE ANDA 👇
       state = state.copyWith(
         isLoading:         false,
         totalPoin:         result.totalPoin,
         transaksiTerakhir: result.transaksiTerakhir,
+        totalSetoran:      double.tryParse(result.totalSetoran?.toString() ?? '0') ?? 0.0, // 👈 Ambil total setoran
+        level:             result.level ?? 'Bronze', // 👈 Ambil level nasabah
       );
     } catch (e) {
       state = state.copyWith(

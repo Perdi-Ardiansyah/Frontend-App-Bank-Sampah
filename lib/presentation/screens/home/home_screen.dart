@@ -29,12 +29,13 @@ class HomeScreen extends ConsumerWidget {
       ),
       
       // ── BODY DENGAN SINGLE CHILD SCROLL VIEW ──
+      // ... (Bagian atas HomeScreen tetap sama) ...
+
+      // ── BODY DENGAN SINGLE CHILD SCROLL VIEW ──
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () => ref.read(dashboardProvider.notifier).fetch(),
         child: SingleChildScrollView(
-          // AlwaysScrollableScrollPhysics wajib agar RefreshIndicator bisa ditarik
-          // meskipun konten layarnya belum penuh
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
@@ -48,9 +49,12 @@ class HomeScreen extends ConsumerWidget {
                   : _PoinCard(
                       totalPoin: dashboard.totalPoinFormatted,
                       nilaiRupiah: dashboard.nilaiRupiah,
+                      level: dashboard.level, // 👈 OPER DATA LEVEL BARU
+                      totalSetoran: dashboard.totalSetoranFormatted, // 👈 OPER DATA TIMBANGAN BARU
                     ),
 
               const SizedBox(height: 16),
+// ... (Sisa kode Quick Access dan Transaksi Terakhir ke bawah tetap sama) ...
 
               // Quick Access
               Row(
@@ -135,7 +139,15 @@ class HomeScreen extends ConsumerWidget {
 class _PoinCard extends StatelessWidget {
   final String totalPoin;
   final String nilaiRupiah;
-  const _PoinCard({required this.totalPoin, required this.nilaiRupiah});
+  final String level;      // 👈 Tambah parameter level
+  final String totalSetoran; // 👈 Tambah parameter total setoran
+
+  const _PoinCard({
+    required this.totalPoin,
+    required this.nilaiRupiah,
+    required this.level,
+    required this.totalSetoran,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +172,7 @@ class _PoinCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Baris Atas: Wallet Icon, Judul, dan BADGE LEVEL NASABAH
           Row(
             children: [
               Container(
@@ -182,9 +195,14 @@ class _PoinCard extends StatelessWidget {
                   letterSpacing: 1.5,
                 ),
               ),
+              const Spacer(),
+              // 👇 BADGE LEVEL PINTAR DI POIN CARD 👇
+              _LevelCardBadge(level: level),
             ],
           ),
           const SizedBox(height: 12),
+          
+          // Bagian Tengah: Nilai Poin Utama
           Text(
             totalPoin,
             style: AppTextStyles.dataDisplay.copyWith(
@@ -193,30 +211,115 @@ class _PoinCard extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.sync_alt_rounded,
-                  color: Colors.white,
-                  size: 14,
+          const SizedBox(height: 16),
+          
+          // Baris Bawah: Konversi Rupiah & Info Total Timbangan Sampah
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Info Rupiah
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(50),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Setara dengan $nilaiRupiah',
-                  style: AppTextStyles.bodySm.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                child: Row(
+                  children: [
+                    const Icon(Icons.sync_alt_rounded, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Setara $nilaiRupiah',
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Info Total Berat Setoran Sampah
+              Row(
+                children: [
+                  Icon(
+                    Icons.scale_rounded, 
+                    color: Colors.white.withOpacity(0.7), 
+                    size: 14
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    'Total: $totalSetoran',
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: Colors.white.withOpacity(0.9),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── WIDGET TAMPILAN BADGE LEVEL EKSLUSIF DI ATAS KARTU POIN ──
+class _LevelCardBadge extends StatelessWidget {
+  final String level;
+  const _LevelCardBadge({required this.level});
+
+  @override
+  Widget build(BuildContext context) {
+    Color badgeColor;
+    Color textColor;
+    IconData icon;
+
+    switch (level.toLowerCase()) {
+      case 'gold':
+        badgeColor = const Color(0xFFFFD700); // Emas Asli
+        textColor = const Color(0xFF5C4308); // Teks Cokelat Gelap Kontras
+        icon = Icons.stars_rounded;
+        break;
+      case 'silver':
+        badgeColor = const Color(0xFFE0E0E0); // Perak Platinum
+        textColor = const Color(0xFF37474F); // Teks Slate Grey
+        icon = Icons.workspace_premium_rounded;
+        break;
+      case 'bronze':
+      default:
+        badgeColor = const Color(0xFFFFAB91); // Perunggu/Deep Amber Light
+        textColor = const Color(0xFF5D4037);
+        icon = Icons.military_tech_rounded;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            level.toUpperCase(),
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 10,
+              letterSpacing: 0.8,
             ),
           ),
         ],
