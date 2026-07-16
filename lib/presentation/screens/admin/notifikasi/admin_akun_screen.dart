@@ -556,6 +556,60 @@ class _AdminNotifikasiScreenState extends ConsumerState<AdminNotifikasiScreen> {
               style: AppTextStyles.labelSm.copyWith(color: AppColors.primary),
             ),
           ),
+          IconButton(
+            icon: const Icon(
+              Icons.delete_sweep_rounded,
+              color: AppColors.error,
+            ),
+            tooltip: 'Bersihkan Semua',
+            onPressed: () async {
+              // Tampilkan dialog konfirmasi sebelum menghapus
+              final bool? confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Bersihkan Notifikasi'),
+                  content: const Text(
+                    'Apakah Anda yakin ingin menghapus semua riwayat notifikasi? Aksi ini tidak dapat dibatalkan.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Batal'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text(
+                        'Hapus Semua',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                final ok = await ref
+                    .read(notifikasiProvider.notifier)
+                    .bersihkanNotifikasi();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        ok
+                            ? 'Notifikasi berhasil dibersihkan'
+                            : 'Gagal membersihkan notifikasi',
+                      ),
+                      backgroundColor: ok ? AppColors.success : AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(

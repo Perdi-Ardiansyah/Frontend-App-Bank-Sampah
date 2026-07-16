@@ -1015,6 +1015,20 @@ class NotifikasiNotifier extends StateNotifier<NotifikasiState> {
       print('🚨 ERROR TANDAI DIBACA: $e');
     }
   }
+
+  Future<bool> bersihkanNotifikasi() async {
+    try {
+      // Tembak ke endpoint delete yang baru kita buat
+      await ApiClient.instance.delete('/admin/notifikasi/bersihkan');
+      
+      // Kosongkan data lokal di state agar UI langsung bersih tanpa loading ulang
+      state = state.copyWith(data: const []);
+      return true;
+    } catch (e) {
+      print('🚨 ERROR BERSIHKAN NOTIFIKASI: $e');
+      return false;
+    }
+  }
 }
 
 final notifikasiProvider =

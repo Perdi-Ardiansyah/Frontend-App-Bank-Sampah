@@ -1,3 +1,4 @@
+import 'package:bank_sampah_fiks/core/network/api_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/transaksi_model.dart';
 import '../../data/models/produk_model.dart';
@@ -432,6 +433,24 @@ class NotifikasiNotifier extends StateNotifier<NotifikasiState> {
         createdAt: n.createdAt,
       )).toList(),
     );
+  }
+
+  // 👇 TAMBAHKAN FUNGSI INI DI SINI 👇
+  Future<bool> bersihkanNotifikasi() async {
+    try {
+      // 1. Panggil API delete melalui ApiClient langsung (karena endpoint baru)
+      await ApiClient.instance.delete('/nasabah/notifikasi/bersihkan');
+      
+      // 2. Kosongkan state lokal list items & unreadCount menjadi 0 secara instan
+      state = state.copyWith(
+        items: const [],
+        unreadCount: 0,
+      );
+      return true;
+    } catch (e) {
+      print('🚨 ERROR BERSIHKAN NOTIFIKASI NASABAH: $e');
+      return false;
+    }
   }
 }
 
