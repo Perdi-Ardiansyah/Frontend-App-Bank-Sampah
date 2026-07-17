@@ -23,33 +23,29 @@ class ApiClient {
   static const String baseUrl = '$serverUrl/api';
 
   // 2. FUNGSI PINTAR PEMBERSIH GAMBAR TERPUSAT
+  // 2. FUNGSI PINTAR PEMBERSIH GAMBAR TERPUSAT
   static String getImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
 
-    // 1. SAPU BERSIH: Paksa ubah semua localhost menjadi domain asli cPanel Anda
+    // KITA GUNAKAN VARIABEL serverUrl AGAR SELALU SINKRON DENGAN DOMAIN UTAMA
+    String domain = serverUrl; 
 
-    // path = path.replaceAll('http://10.0.2.2:8000', 'http://10.0.2.2:8000');
-    // path = path.replaceAll('http://localhost:8000', 'http://10.0.2.2:8000');
-    // path = path.replaceAll('http://127.0.0.1:8000', 'http://10.0.2.2:8000');
-    path = path.replaceAll('http://10.0.2.2:8000', 'https://banksampahkita.kotapintar.my.id');
-    path = path.replaceAll('http://localhost:8000', 'https://banksampahkita.kotapintar.my.id');
-    path = path.replaceAll('http://127.0.0.1:8000', 'https://banksampahkita.kotapintar.my.id');
+    // 1. SAPU BERSIH: Ubah semua URL localhost jadul (kalau ada di database) menjadi URL cPanel
+    path = path.replaceAll('http://10.0.2.2:8000', domain);
+    path = path.replaceAll('http://localhost:8000', domain);
+    path = path.replaceAll('http://127.0.0.1:8000', domain);
 
-    // 2. Jika setelah diganti jalurnya sudah berawalan http yang benar, langsung tampilkan
+    // 2. Jika setelah disapu jalur sudah berawalan http (lengkap), langsung kembalikan
     if (path.startsWith('http')) {
       return path;
     }
 
-    // 3. Jika data dari database hanya berupa jalur pendek (contoh: kategori/kaca.jpg)
-    // KITA PAKSA PAKAI DOMAIN CPANEL, bukan variabel lagi.
-    String domain = 'https://banksampahkita.kotapintar.my.id';
-    // String domain = 'http://10.0.2.2:8000';
-
-    
+    // 3. Jika datanya hanya tulisan singkat seperti "kategori/besi.jpg" atau "/kategori/besi.jpg"
     if (path.startsWith('/')) {
-      path = path.substring(1); 
+      path = path.substring(1); // Buang garis miring di depan agar tidak dobel
     }
 
+    // Gabungkan nama domain + folder storage Laravel + nama filenya
     return '$domain/storage/$path';
   }
 

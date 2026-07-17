@@ -10,12 +10,15 @@ import '/../../core/theme/app_colors.dart';
 import '/../../core/theme/app_text_styles.dart';
 import '/../../data/providers/admin_provider.dart';
 
-
 class AdminLaporanScreen extends ConsumerWidget {
   const AdminLaporanScreen({super.key});
 
   // Fungsi untuk menampilkan Date Range Picker
-  Future<void> _pilihTanggal(BuildContext context, WidgetRef ref, LaporanAdminState state) async {
+  Future<void> _pilihTanggal(
+    BuildContext context,
+    WidgetRef ref,
+    LaporanAdminState state,
+  ) async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       initialDateRange: DateTimeRange(
@@ -41,7 +44,9 @@ class AdminLaporanScreen extends ConsumerWidget {
     if (picked != null) {
       final dariStr = picked.start.toString().split(' ')[0];
       final sampaiStr = picked.end.toString().split(' ')[0];
-      ref.read(laporanAdminProvider.notifier).fetch(dari: dariStr, sampai: sampaiStr);
+      ref
+          .read(laporanAdminProvider.notifier)
+          .fetch(dari: dariStr, sampai: sampaiStr);
     }
   }
 
@@ -59,7 +64,10 @@ class AdminLaporanScreen extends ConsumerWidget {
           elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.date_range_rounded, color: AppColors.primary),
+              icon: const Icon(
+                Icons.date_range_rounded,
+                color: AppColors.primary,
+              ),
               tooltip: 'Filter Tanggal',
               onPressed: () => _pilihTanggal(context, ref, laporanState),
             ),
@@ -68,7 +76,9 @@ class AdminLaporanScreen extends ConsumerWidget {
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.outline,
-            labelStyle: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.bold),
+            labelStyle: AppTextStyles.labelMd.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
             tabs: const [
               Tab(text: 'Setoran'),
               Tab(text: 'Tukar Cash'),
@@ -78,62 +88,121 @@ class AdminLaporanScreen extends ConsumerWidget {
         ),
         body: RefreshIndicator(
           color: AppColors.primary,
-          onRefresh: () async => ref.read(laporanAdminProvider.notifier).fetch(),
+          onRefresh: () async =>
+              ref.read(laporanAdminProvider.notifier).fetch(),
           child: laporanState.isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
               : report == null
-                  ? const Center(child: Text('Gagal memuat atau data kosong.'))
-                  : TabBarView(
-                      children: [
-                        // TAB 1: SETORAN
-                        _LaporanTabContent(
-                          title: 'Tabel Rekap Setoran',
-                          tipeLaporan: 'setoran',
-                          dari: laporanState.dari,
-                          sampai: laporanState.sampai,
-                          columns: const ['Tanggal', 'Nasabah', 'Kategori', 'Massa', 'Poin'],
-                          items: report.setoran,
-                          rowBuilder: (item) => [
-                            DataCell(Text(item['tanggal'] ?? '-')),
-                            DataCell(Text(item['nasabah'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold))),
-                            DataCell(Text(item['kategori'] ?? '-')),
-                            DataCell(Text(item['berat'] ?? '-')),
-                            DataCell(Text(item['poin'] ?? '-', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold))),
-                          ],
+              ? const Center(child: Text('Gagal memuat atau data kosong.'))
+              : TabBarView(
+                  children: [
+                    // TAB 1: SETORAN
+                    _LaporanTabContent(
+                      title: 'Tabel Rekap Setoran',
+                      tipeLaporan: 'setoran',
+                      dari: laporanState.dari,
+                      sampai: laporanState.sampai,
+                      columns: const [
+                        'Tanggal',
+                        'Nasabah',
+                        'Kategori',
+                        'Massa',
+                        'Poin',
+                      ],
+                      items: report.setoran,
+                      rowBuilder: (item) => [
+                        DataCell(Text(item['tanggal'] ?? '-')),
+                        DataCell(
+                          Text(
+                            item['nasabah'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        // TAB 2: TUKAR CASH
-                        _LaporanTabContent(
-                          title: 'Tabel Rekap Pencairan',
-                          tipeLaporan: 'cash',
-                          dari: laporanState.dari,
-                          sampai: laporanState.sampai,
-                          columns: const ['Tanggal', 'Nasabah', 'Metode', 'Nominal'],
-                          items: report.tukarCash,
-                          rowBuilder: (item) => [
-                            DataCell(Text(item['tanggal'] ?? '-')),
-                            DataCell(Text(item['nasabah'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold))),
-                            DataCell(Text(item['metode'] ?? '-')),
-                            DataCell(Text(item['nominal'] ?? '-', style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold))),
-                          ],
-                        ),
-                        // TAB 3: TUKAR SEMBAKO
-                        _LaporanTabContent(
-                          title: 'Tabel Rekap Sembako',
-                          tipeLaporan: 'produk',
-                          dari: laporanState.dari,
-                          sampai: laporanState.sampai,
-                          columns: const ['Tanggal', 'Nasabah', 'Produk', 'Jumlah', 'Poin'],
-                          items: report.tukarSembako,
-                          rowBuilder: (item) => [
-                            DataCell(Text(item['tanggal'] ?? '-')),
-                            DataCell(Text(item['nasabah'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold))),
-                            DataCell(Text(item['produk'] ?? '-')),
-                            DataCell(Text(item['jumlah'] ?? '-')),
-                            DataCell(Text(item['poin'] ?? '-', style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold))),
-                          ],
+                        DataCell(Text(item['kategori'] ?? '-')),
+                        DataCell(Text(item['berat'] ?? '-')),
+                        DataCell(
+                          Text(
+                            item['poin'] ?? '-',
+                            style: const TextStyle(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),
+                    // TAB 2: TUKAR CASH
+                    _LaporanTabContent(
+                      title: 'Tabel Rekap Pencairan',
+                      tipeLaporan: 'cash',
+                      dari: laporanState.dari,
+                      sampai: laporanState.sampai,
+                      columns: const [
+                        'Tanggal',
+                        'Nasabah',
+                        'Metode',
+                        'Nominal',
+                      ],
+                      items: report.tukarCash,
+                      rowBuilder: (item) => [
+                        DataCell(Text(item['tanggal'] ?? '-')),
+                        DataCell(
+                          Text(
+                            item['nasabah'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        DataCell(Text(item['metode'] ?? '-')),
+                        DataCell(
+                          Text(
+                            item['nominal'] ?? '-',
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // TAB 3: TUKAR SEMBAKO
+                    _LaporanTabContent(
+                      title: 'Tabel Rekap Sembako',
+                      tipeLaporan: 'produk',
+                      dari: laporanState.dari,
+                      sampai: laporanState.sampai,
+                      columns: const [
+                        'Tanggal',
+                        'Nasabah',
+                        'Produk',
+                        'Jumlah',
+                        'Poin',
+                      ],
+                      items: report.tukarSembako,
+                      rowBuilder: (item) => [
+                        DataCell(Text(item['tanggal'] ?? '-')),
+                        DataCell(
+                          Text(
+                            item['nasabah'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        DataCell(Text(item['produk'] ?? '-')),
+                        DataCell(Text(item['jumlah'] ?? '-')),
+                        DataCell(
+                          Text(
+                            item['poin'] ?? '-',
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -162,18 +231,21 @@ class _LaporanTabContent extends StatelessWidget {
   // ── FUNGSI UNDUH BERKAS LANGSUNG (TANPA BROWSER) ──
   // ── FUNGSI UNDUH BERKAS LANGSUNG (TANPA BROWSER) ──
   Future<void> _unduhBerkas(BuildContext context, String format) async {
-    const String baseUrl = 'https://banksampahkita.kotapintar.my.id/api/admin'; 
-    final String urlEndpoint = '$baseUrl/laporan/$format?tipe=$tipeLaporan&dari=$dari&sampai=$sampai';
+    const String baseUrl = 'https://banksampahkita.kotapintar.my.id/api/admin';
+    final String urlEndpoint =
+        '$baseUrl/laporan/$format?tipe=$tipeLaporan&dari=$dari&sampai=$sampai';
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
     );
 
     try {
       // 👇 MENGGUNAKAN STORAGE HELPER MILIK ANDA SENDIRI 👇
-      final String? token = await StorageHelper.getToken(); 
+      final String? token = await StorageHelper.getToken();
 
       if (token == null || token.isEmpty) {
         throw Exception("Token tidak ditemukan. Silakan login ulang.");
@@ -181,7 +253,7 @@ class _LaporanTabContent extends StatelessWidget {
 
       Dio dio = Dio();
       Directory? directory;
-      
+
       if (Platform.isAndroid) {
         directory = Directory('/storage/emulated/0/Download');
         if (!await directory.exists()) {
@@ -191,17 +263,19 @@ class _LaporanTabContent extends StatelessWidget {
         directory = await getApplicationDocumentsDirectory();
       }
 
-      final String ekstensi = format == 'excel' ? 'xlsx' : 'pdf';
-      final String namaFile = "Laporan_${tipeLaporan}_${DateTime.now().millisecondsSinceEpoch}.$ekstensi";
+      // 👇 Ubah 'xlsx' menjadi 'csv' 👇
+      final String ekstensi = format == 'excel' ? 'csv' : 'pdf';
+      final String namaFile =
+          "Laporan_${tipeLaporan}_${DateTime.now().millisecondsSinceEpoch}.$ekstensi";
       final String savePath = "${directory!.path}/$namaFile";
 
       // Header dengan token yang sudah pasti valid
       await dio.download(
-        urlEndpoint, 
+        urlEndpoint,
         savePath,
         options: Options(
           headers: {
-            'Authorization': 'Bearer $token', 
+            'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         ),
@@ -225,11 +299,14 @@ class _LaporanTabContent extends StatelessWidget {
       if (!context.mounted) return;
       Navigator.pop(context); // Tutup loading
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengunduh laporan: $e'), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text('Gagal mengunduh laporan: $e'),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -243,9 +320,21 @@ class _LaporanTabContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.headlineMd.copyWith(fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text(
+                    title,
+                    style: AppTextStyles.headlineMd.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text('Periode: $dari s/d $sampai', style: const TextStyle(fontSize: 11, color: AppColors.outline)),
+                  Text(
+                    'Periode: $dari s/d $sampai',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.outline,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -255,17 +344,23 @@ class _LaporanTabContent extends StatelessWidget {
                   icon: Icons.description_rounded,
                   color: Colors.green,
                   tooltip: 'Unduh Excel',
-                  onTap: () => _unduhBerkas(context, 'excel'), // 👈 Pemanggilan fungsi sudah diperbaiki
+                  onTap: () => _unduhBerkas(
+                    context,
+                    'excel',
+                  ), // 👈 Pemanggilan fungsi sudah diperbaiki
                 ),
                 const SizedBox(width: 8),
                 _ExportBtn(
                   icon: Icons.picture_as_pdf_rounded,
                   color: Colors.red,
                   tooltip: 'Unduh PDF',
-                  onTap: () => _unduhBerkas(context, 'pdf'), // 👈 Pemanggilan fungsi sudah diperbaiki
+                  onTap: () => _unduhBerkas(
+                    context,
+                    'pdf',
+                  ), // 👈 Pemanggilan fungsi sudah diperbaiki
                 ),
               ],
-            )
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -273,7 +368,9 @@ class _LaporanTabContent extends StatelessWidget {
         if (items.isEmpty)
           const Padding(
             padding: EdgeInsets.all(40.0),
-            child: Center(child: Text('Tidak ada data transaksi untuk periode ini.')),
+            child: Center(
+              child: Text('Tidak ada data transaksi untuk periode ini.'),
+            ),
           )
         else
           Container(
@@ -281,28 +378,39 @@ class _LaporanTabContent extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surfaceWhite,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.outlineVariant.withOpacity(0.35)),
+              border: Border.all(
+                color: AppColors.outlineVariant.withOpacity(0.35),
+              ),
             ),
             child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.55, 
+              height: MediaQuery.of(context).size.height * 0.55,
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(AppColors.background),
+                    headingRowColor: WidgetStateProperty.all(
+                      AppColors.background,
+                    ),
                     horizontalMargin: 12,
                     columnSpacing: 24,
                     columns: columns
-                        .map((colName) => DataColumn(
-                              label: Text(
-                                colName,
-                                style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.bold, color: AppColors.textMain),
+                        .map(
+                          (colName) => DataColumn(
+                            label: Text(
+                              colName,
+                              style: AppTextStyles.labelMd.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textMain,
                               ),
-                            ))
+                            ),
+                          ),
+                        )
                         .toList(),
                     rows: items.map((itemData) {
-                      return DataRow(cells: rowBuilder(itemData as Map<String, dynamic>));
+                      return DataRow(
+                        cells: rowBuilder(itemData as Map<String, dynamic>),
+                      );
                     }).toList(),
                   ),
                 ),
@@ -320,7 +428,12 @@ class _ExportBtn extends StatelessWidget {
   final String tooltip;
   final VoidCallback onTap;
 
-  const _ExportBtn({required this.icon, required this.color, required this.tooltip, required this.onTap});
+  const _ExportBtn({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

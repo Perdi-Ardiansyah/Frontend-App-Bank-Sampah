@@ -79,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      // TODO: Arahkan ke tab Riwayat jika ditekan
+                      Navigator.pushNamed(context, '/riwayat');
                     },
                     child: Row(
                       children: [

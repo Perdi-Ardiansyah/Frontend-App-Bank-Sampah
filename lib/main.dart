@@ -1,3 +1,4 @@
+import 'package:bank_sampah_fiks/presentation/screens/riwayat/riwayat_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,10 +80,12 @@ class BankSampahApp extends StatelessWidget {
         '/': (context) => const AuthCheckerScreen(),
         '/login':            (_) => const LoginScreen(),
         '/register':         (_) => const RegisterScreen(),
+        
         '/pending':          (_) => const PendingVerificationScreen(),
         '/session-expired':  (_) => const SessionExpiredScreen(),
         '/home':             (_) => const MainScreen(),
         '/katalog':          (_) => const KatalogScreen(),
+        '/riwayat':          (_) => const RiwayatScreen(),
         '/admin-home':       (_) => const AdminMainScreen(),
         '/admin-laporan':    (_) => const AdminLaporanScreen(),
         '/admin-verifikasi': (_) => const AdminVerifikasiScreen(),
