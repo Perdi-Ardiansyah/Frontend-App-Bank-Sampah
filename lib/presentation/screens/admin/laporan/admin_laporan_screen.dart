@@ -162,7 +162,7 @@ class _LaporanTabContent extends StatelessWidget {
   // ── FUNGSI UNDUH BERKAS LANGSUNG (TANPA BROWSER) ──
   // ── FUNGSI UNDUH BERKAS LANGSUNG (TANPA BROWSER) ──
   Future<void> _unduhBerkas(BuildContext context, String format) async {
-    const String baseUrl = 'http://10.0.2.2:8000/api/admin'; 
+    const String baseUrl = 'https://banksampahkita.kotapintar.my.id/api/admin'; 
     final String urlEndpoint = '$baseUrl/laporan/$format?tipe=$tipeLaporan&dari=$dari&sampai=$sampai';
 
     showDialog(

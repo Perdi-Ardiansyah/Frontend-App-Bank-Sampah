@@ -43,7 +43,7 @@ class ProdukModel {
       if (!rawUrl.startsWith('storage/')) rawUrl = 'storage/$rawUrl';
       
       // 🚨 PENTING: Ganti dengan IP yang sama dengan yang Anda pakai di ApiClient
-      rawUrl = 'http://10.0.2.2:8000/$rawUrl'; 
+      rawUrl = 'https://banksampahkita.kotapintar.my.id/$rawUrl'; 
     }
 
     return ProdukModel(
@@ -86,7 +86,7 @@ class KategoriModel {
       if (!rawUrl.startsWith('storage/')) rawUrl = 'storage/$rawUrl';
       
       // Sesuaikan IP ini jika menggunakan HP Fisik (misal: 192.168.1.x)
-      rawUrl = 'http://10.0.2.2:8000/$rawUrl'; 
+      rawUrl = 'https://banksampahkita.kotapintar.my.id/$rawUrl'; 
     }
 
     return KategoriModel(
