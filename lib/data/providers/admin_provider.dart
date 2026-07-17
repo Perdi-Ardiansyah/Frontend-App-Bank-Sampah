@@ -1044,26 +1044,32 @@ class LaporanAdminData {
   final int totalTransaksi;
   final double volumeKg;
   final int nilaiKonversi;
-  final List<Map<String, dynamic>> transaksi;
+  
+  // 👇 KATEGORI TRANSAKSI YANG SUDAH DIPISAH 👇
+  final List<dynamic> setoran;
+  final List<dynamic> tukarSembako;
+  final List<dynamic> tukarCash;
 
   LaporanAdminData({
     required this.totalTransaksi,
     required this.volumeKg,
     required this.nilaiKonversi,
-    required this.transaksi,
+    required this.setoran,
+    required this.tukarSembako,
+    required this.tukarCash,
   });
 
   factory LaporanAdminData.fromJson(Map<String, dynamic> json) {
     final stats = json['stats'] ?? {};
-    final rawData = json['data'] as List<dynamic>? ?? [];
+    final data = json['data'] ?? {};
 
     return LaporanAdminData(
-      totalTransaksi:
-          int.tryParse(stats['total_transaksi']?.toString() ?? '0') ?? 0,
+      totalTransaksi: int.tryParse(stats['total_transaksi']?.toString() ?? '0') ?? 0,
       volumeKg: double.tryParse(stats['volume_kg']?.toString() ?? '0') ?? 0.0,
-      nilaiKonversi:
-          int.tryParse(stats['nilai_konversi']?.toString() ?? '0') ?? 0,
-      transaksi: rawData.map((e) => e as Map<String, dynamic>).toList(),
+      nilaiKonversi: int.tryParse(stats['nilai_konversi']?.toString() ?? '0') ?? 0,
+      setoran: data['setoran'] as List<dynamic>? ?? const [],
+      tukarSembako: data['tukar_sembako'] as List<dynamic>? ?? const [],
+      tukarCash: data['tukar_cash'] as List<dynamic>? ?? const [],
     );
   }
 }
