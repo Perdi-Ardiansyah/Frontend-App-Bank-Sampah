@@ -13,7 +13,12 @@ class DashboardAdminModel {
   final int setoranHariIniKg;
   final int setoranHariIniTransaksi;
   final int poinDiberikanHariIni;
-  final List<dynamic> grafikMingguan; 
+  final List<dynamic> grafikMingguan;
+  
+  // 👇 INI 3 VARIABEL BARU UNTUK MENAMPUNG DETAIL TABEL 👇
+  final List<List<String>> detailNasabah;
+  final List<List<String>> detailPoin;
+  final List<List<String>> detailSampah;
 
   const DashboardAdminModel({
     required this.totalNasabah,
@@ -25,14 +30,28 @@ class DashboardAdminModel {
     required this.setoranHariIniTransaksi,
     required this.poinDiberikanHariIni,
     this.grafikMingguan = const [],
+    
+    // Default array kosong agar tidak error walau backend belum ngirim
+    this.detailNasabah = const [],
+    this.detailPoin = const [],
+    this.detailSampah = const [],
   });
 
   factory DashboardAdminModel.fromJson(Map<String, dynamic> json) {
     try {
+      print('💡 CEK ISI NASABAH DARI LARAVEL: ${json['detail_nasabah']}');
       final hari = json['setoran_hari_ini'] as Map<String, dynamic>? ?? {};
       
+      // 👇 FUNGSI PINTAR UNTUK MENGUBAH DATA JSON MENJADI LIST BERSARANG 👇
+      List<List<String>> parseList(String key) {
+        if (json[key] == null) return [];
+        return (json[key] as List).map((row) {
+          return (row as List).map((cell) => cell.toString()).toList();
+        }).toList();
+      }
+
       return DashboardAdminModel(
-        // Gunakan int.tryParse dan double.tryParse agar aman dari beda tipe data String/Integer
+        // Bagian atas tetap sama seperti milik Anda
         totalNasabah:             int.tryParse(json['total_nasabah']?.toString() ?? '0') ?? 0,
         nasabahHariIni:           int.tryParse(json['nasabah_hari_ini']?.toString() ?? '0') ?? 0,
         totalPoinBeredar:         int.tryParse(json['total_poin_beredar']?.toString() ?? '0') ?? 0,
@@ -44,9 +63,13 @@ class DashboardAdminModel {
         grafikMingguan:           json['grafik_mingguan'] != null 
                                       ? List<dynamic>.from(json['grafik_mingguan']) 
                                       : [],
+                                      
+        // 👇 TANGKAP DATANYA DI SINI MENGGUNAKAN FUNGSI PINTAR TADI 👇
+        detailNasabah: parseList('detail_nasabah'),
+        detailPoin: parseList('detail_poin'),
+        detailSampah: parseList('detail_sampah'),
       );
     } catch (e) {
-      // Alat sadap jika ternyata masih ada yang crash
       print('🚨 CRASH SAAT PARSING JSON: $e');
       rethrow;
     }

@@ -26,8 +26,8 @@ class AuthState {
     String? errorMessage,
   }) {
     return AuthState(
-      status:       status ?? this.status,
-      user:         user ?? this.user,
+      status: status ?? this.status,
+      user: user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -46,13 +46,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // 👇 TAMBAHKAN FUNGSI INI DI DALAM class AuthNotifier 👇
-  
+
   /// Memperbarui data user secara lokal di UI dan di Storage secara instan
-  void updateLocalUser({
-    String? namaLengkap,
-    String? email,
-    String? noHp,
-  }) {
+  void updateLocalUser({String? namaLengkap, String? email, String? noHp}) {
     if (state.user == null) return; // Pastikan user sedang login
 
     final oldUser = state.user!;
@@ -73,9 +69,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(user: newUser);
 
     // 2. Timpa data user di Storage agar tetap awet saat aplikasi ditutup
-    StorageHelper.saveUserObject(newUser.toJsonString()); 
+    StorageHelper.saveUserObject(newUser.toJsonString());
   }
-  
+
   // 👆 SAMPAI SINI 👆
 
   Future<bool> updateProfilTeks({
@@ -86,12 +82,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await ApiClient.instance.post(
         '/user/update-profil',
-        data: {
-          'nama_lengkap': namaLengkap,
-          'email': email,
-          'no_hp': noHp,
-        },
+        data: {'nama_lengkap': namaLengkap, 'email': email, 'no_hp': noHp},
       );
+
+      // 👇 TAMBAHKAN BARIS INI 👇
+      // Agar teks profil di layar langsung berubah tanpa perlu fetch ulang
+      updateLocalUser(namaLengkap: namaLengkap, email: email, noHp: noHp);
+
       return true;
     } catch (e) {
       print('🚨 ERROR UPDATE PROFIL: $e');
@@ -99,26 +96,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  
-
   Future<bool> updateFotoProfil(File imageFile) async {
     try {
       String fileName = imageFile.path.split('/').last;
-      
+
       FormData formData = FormData.fromMap({
-        'foto': await MultipartFile.fromFile(imageFile.path, filename: fileName),
+        'foto': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        ),
       });
 
-      final res = await ApiClient.instance.post('/user/update-foto', data: formData); 
-      
+      final res = await ApiClient.instance.post(
+        '/user/update-foto',
+        data: formData,
+      );
+
       // BARIS FETCH DIHAPUS DARI SINI
-      
+      await fetchUserProfile();
       return true;
     } catch (e) {
       print('🚨 ERROR UPLOAD FOTO: $e');
       return false;
     }
   }
+
   /// Cek apakah ada sesi tersimpan saat app pertama dibuka
   Future<void> _checkExistingSession() async {
     final isLoggedIn = await StorageHelper.isLoggedIn();
@@ -137,7 +139,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-
   /// Return LoginResult agar screen bisa navigasi sesuai hasilnya
   Future<LoginResult> login({
     required String username,
@@ -153,15 +154,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     switch (result.result) {
       case LoginResult.successAdmin:
       case LoginResult.successNasabah:
-        state = AuthState(
-          status: AuthStatus.authenticated,
-          user:   result.user,
-        );
+        state = AuthState(status: AuthStatus.authenticated, user: result.user);
         break;
 
       case LoginResult.pendingVerifikasi:
         state = AuthState(
-          status:       AuthStatus.unauthenticated,
+          status: AuthStatus.unauthenticated,
           errorMessage: result.message,
         );
         break;
@@ -169,7 +167,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       case LoginResult.invalidCredentials:
       case LoginResult.serverError:
         state = AuthState(
-          status:       AuthStatus.unauthenticated,
+          status: AuthStatus.unauthenticated,
           errorMessage: result.message,
         );
         break;
@@ -178,7 +176,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return result.result;
   }
 
-  
   /// Register — dipanggil dari RegisterScreen
   Future<({bool success, String message})> register({
     required String namaLengkap,
@@ -189,9 +186,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
     final result = await _authService.register(
       namaLengkap: namaLengkap,
-      username:    username,
-      email:       email,
-      password:    password,
+      username: username,
+      email: email,
+      password: password,
     );
     state = state.copyWith(status: AuthStatus.unauthenticated);
     return result;
@@ -201,24 +198,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> fetchUserProfile() async {
     try {
       // Pastikan endpoint '/user/me' atau '/profil' sesuai dengan route di Laravel Anda
-      final response = await ApiClient.instance.get('/user/me'); 
-      
+      final response = await ApiClient.instance.get('/user/me');
+
       // Sesuaikan 'data' dengan bentuk JSON response dari Laravel Anda
-      final userData = response.data['data']; 
-      
+      final userData = response.data['data'];
+
       // Ubah JSON dari API menjadi UserModel
       final updatedUser = UserModel.fromJson(userData);
 
       // 1. Perbarui state di UI
-      state = state.copyWith(user: updatedUser, status: AuthStatus.authenticated);
+      state = state.copyWith(
+        user: updatedUser,
+        status: AuthStatus.authenticated,
+      );
 
       // 2. Timpa data lama di storage lokal agar tetap awet
       await StorageHelper.saveUserObject(updatedUser.toJsonString());
-      
+
       return true;
     } catch (e) {
       print('🚨 ERROR FETCH PROFILE: $e');
-      // Jika error 401 (token mati), Interceptor di api_client.dart Anda otomatis 
+      // Jika error 401 (token mati), Interceptor di api_client.dart Anda otomatis
       // akan menghapus token dan melempar user ke halaman login.
       return false;
     }
@@ -237,14 +237,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String konfirmasiPassword,
   }) async {
     return _authService.changePassword(
-      passwordLama:       passwordLama,
-      passwordBaru:       passwordBaru,
+      passwordLama: passwordLama,
+      passwordBaru: passwordBaru,
       konfirmasiPassword: konfirmasiPassword,
     );
   }
 }
-
-
 
 // ── Providers ──────────────────────────────────────────────────────────────
 

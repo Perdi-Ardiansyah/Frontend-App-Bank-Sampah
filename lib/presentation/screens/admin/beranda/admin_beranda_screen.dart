@@ -9,20 +9,102 @@ import '../verifikasi/admin_verifikasi_screen.dart';
 import '../pencairan/admin_pencairan_screen.dart';
 import '../kategori/admin_kategori_screen.dart';
 import '../produk/admin_produk_screen.dart';
-// Sesuaikan jumlah titik-titiknya dengan posisi folder Anda
 import '../notifikasi/admin_akun_screen.dart';
 
 class AdminBerandaScreen extends ConsumerWidget {
   final void Function(int)? onNavigate;
   const AdminBerandaScreen({super.key, this.onNavigate});
 
+  // 👇 FUNGSI BARU: Untuk memunculkan tabel detail dari bawah layar 👇
+  void _tampilkanDetailTabel(
+    BuildContext context,
+    String judul,
+    List<String> kolom,
+    List<List<String>> barisData,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                const SizedBox(height: 12),
+                // Garis kecil di atas modal (Handle)
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  judul,
+                  style: AppTextStyles.headlineMd.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: barisData.isEmpty
+                      ? const Center(child: Text('Data belum tersedia'))
+                      : SingleChildScrollView(
+                          controller: scrollController,
+                          scrollDirection: Axis.vertical, // Scroll ke bawah
+                          child: SingleChildScrollView(
+                            scrollDirection:
+                                Axis.horizontal, // Scroll ke samping
+                            child: DataTable(
+                              headingRowColor: WidgetStateProperty.all(
+                                AppColors.surfaceDim,
+                              ),
+                              columns: kolom
+                                  .map(
+                                    (k) => DataColumn(
+                                      label: Text(
+                                        k,
+                                        style: AppTextStyles.labelMd.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              rows: barisData
+                                  .map(
+                                    (baris) => DataRow(
+                                      cells: baris
+                                          .map((sel) => DataCell(Text(sel)))
+                                          .toList(),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(dashboardAdminProvider);
-
-    print('==== CEK DATA DARI SERVER ====');
-    print('Grafik: ${state.data?.grafikMingguan}');
-    print('==============================');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -30,10 +112,7 @@ class AdminBerandaScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: const Text('Bank Sampah'),
-        actions: const [
-          CustomNotifBell(),
-          SizedBox(width: 8), // Sedikit jarak
-        ],
+        actions: const [CustomNotifBell(), SizedBox(width: 8)],
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: Center(
@@ -145,10 +224,8 @@ class AdminBerandaScreen extends ConsumerWidget {
                             ),
                           ),
                           _MenuTile(
-                            icon: Icons
-                                .currency_exchange_rounded, // Mengubah ikon agar lebih cocok dengan 'Penukaran'
-                            label:
-                                'Persetujuan Penukaran', // Mengubah label teks menu
+                            icon: Icons.currency_exchange_rounded,
+                            label: 'Persetujuan Penukaran',
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -173,22 +250,15 @@ class AdminBerandaScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 28),
 
-                      // 👇 GRAFIK DIPASANG DI SINI (PASTI MUNCUL) 👇
-                      // 👇 GRAFIK DIPASANG DI SINI 👇
-                      // 👇 GRAFIK DIPASANG DI SINI 👇
+                      // Grafik
                       _WeeklyStatChart(
                         nasabahAktif:
                             state.data?.totalNasabah.toString() ?? '0',
-
-                        // Ubah ini agar mengambil data TRANSAKSI yang sebenarnya
                         transaksiHariIni:
                             state.data?.setoranHariIniTransaksi.toString() ??
                             '0',
-
-                        // Ubah ini agar mengambil data KG yang sebenarnya
                         setoranHariIni:
                             state.data?.setoranHariIniKg.toString() ?? '0',
-
                         grafikMingguan: state.data?.grafikMingguan,
                       ),
                       const SizedBox(height: 32),
@@ -217,6 +287,7 @@ class AdminBerandaScreen extends ConsumerWidget {
                           ),
                         )
                       else if (state.data != null) ...[
+                        // 👇 KARTU 1: TOTAL NASABAH 👇
                         _StatCard(
                           icon: Icons.group_rounded,
                           iconBg: AppColors.primary,
@@ -224,8 +295,20 @@ class AdminBerandaScreen extends ConsumerWidget {
                           value: state.data!.totalNasabahFormatted,
                           badge: '+${state.data!.nasabahHariIni} hari ini',
                           badgeColor: AppColors.success,
+                          onDetailTap: () {
+                            _tampilkanDetailTabel(
+                              context,
+                              '50 Nasabah Aktif Terbaru',
+                              ['No', 'Nama Lengkap', 'ID/Username', 'Status'],
+                              state
+                                  .data!
+                                  .detailNasabah, // 👈 Ganti data palsunya menjadi ini
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
+
+                        // 👇 KARTU 2: TOTAL POIN BEREDAR 👇
                         _StatCard(
                           icon: Icons.star_rounded,
                           iconBg: AppColors.warning,
@@ -235,8 +318,20 @@ class AdminBerandaScreen extends ConsumerWidget {
                               'Senilai ~Rp ${(state.data!.totalPoinBeredar / 1000).toStringAsFixed(0)}rb',
                           badgeColor: AppColors.onSurfaceVariant,
                           badgeIcon: null,
+                          onDetailTap: () {
+                            _tampilkanDetailTabel(
+                              context,
+                              'Top 50 Peringkat Poin',
+                              ['Rank', 'Nama Nasabah', 'Total Poin'],
+                              state
+                                  .data!
+                                  .detailPoin, // 👈 Ganti data palsunya menjadi ini
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
+
+                        // 👇 KARTU 3: TOTAL SAMPAH TERKUMPUL 👇
                         _StatCard(
                           icon: Icons.recycling_rounded,
                           iconBg: AppColors.secondary,
@@ -244,8 +339,19 @@ class AdminBerandaScreen extends ConsumerWidget {
                           value: state.data!.totalSampahKgFormatted,
                           badge: 'Hari ini: ${state.data!.setoranHariIniKg} kg',
                           badgeColor: AppColors.success,
+                          onDetailTap: () {
+                            _tampilkanDetailTabel(
+                              context,
+                              'Rincian Sampah Terkumpul',
+                              ['Kategori Sampah', 'Total Berat (Kg)'],
+                              state
+                                  .data!
+                                  .detailSampah, // 👈 Ganti data palsunya menjadi ini
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
+
                         _StatCard(
                           icon: Icons.pending_actions_rounded,
                           iconBg: AppColors.error,
@@ -253,6 +359,7 @@ class AdminBerandaScreen extends ConsumerWidget {
                           value: '${state.data!.menungguVerifikasi}',
                           badge: 'Segera proses',
                           badgeColor: AppColors.error,
+                          // Tidak ada onDetailTap di sini karena langsung ada layar khusus verifikasi
                         ),
                       ],
 
@@ -320,6 +427,7 @@ class _StatCard extends StatelessWidget {
   final String badge;
   final Color badgeColor;
   final IconData? badgeIcon;
+  final VoidCallback? onDetailTap; // 👈 PARAMETER BARU
 
   const _StatCard({
     required this.icon,
@@ -329,6 +437,7 @@ class _StatCard extends StatelessWidget {
     required this.badge,
     required this.badgeColor,
     this.badgeIcon = Icons.trending_up_rounded,
+    this.onDetailTap, // 👈 PARAMETER BARU
   });
 
   @override
@@ -388,17 +497,53 @@ class _StatCard extends StatelessWidget {
               ),
             ],
           ),
+          // 👇 JIKA ONDETAILTAP DIISI, TAMPILKAN TOMBOL INI 👇
+          if (onDetailTap != null) ...[
+            const SizedBox(height: 12),
+            Divider(
+              height: 1,
+              color: AppColors.outlineVariant.withOpacity(0.3),
+            ),
+            InkWell(
+              onTap: onDetailTap,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12.0, bottom: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Lihat Detail',
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
+// SISA KODE (GRAFIK) TETAP SAMA
 class _WeeklyStatChart extends StatelessWidget {
   final String nasabahAktif;
   final String transaksiHariIni;
   final String setoranHariIni;
-  final List<dynamic>? grafikMingguan; // 👈 Wajib ada penangkap ini
+  final List<dynamic>? grafikMingguan;
 
   const _WeeklyStatChart({
     Key? key,
@@ -410,27 +555,18 @@ class _WeeklyStatChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ALAT SADAP UI (Cek log terminal setelah di-refresh)
-    print('💡 [UI] Data masuk ke grafik: $grafikMingguan');
-
-    // 1. Tangkap data dari server, jadikan array kosong jika null
     final List<dynamic> rawData = grafikMingguan ?? [];
-
-    // 2. Mesin konversi baja ringan (Aman dari tipe data aneh)
     List<Map<String, dynamic>> chartData = [];
 
     if (rawData.isNotEmpty) {
       chartData = rawData.map((item) {
-        // Ekstrak dengan sangat hati-hati
         double beratAngka = 0.0;
         if (item['berat'] != null) {
           beratAngka = double.tryParse(item['berat'].toString()) ?? 0.0;
         }
-
         return {'day': item['day']?.toString() ?? '-', 'berat': beratAngka};
       }).toList();
     } else {
-      // Jika kosong, tampilkan 0
       chartData = [
         {'day': 'Sen', 'berat': 0.0},
         {'day': 'Sel', 'berat': 0.0},
@@ -442,7 +578,6 @@ class _WeeklyStatChart extends StatelessWidget {
       ];
     }
 
-    // 3. Cari Nilai Tertinggi untuk proporsi tinggi batang
     double maxBerat = 0.1;
     for (var item in chartData) {
       double berat = item['berat'] as double;
@@ -500,7 +635,6 @@ class _WeeklyStatChart extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Quick Stats
           Row(
             children: [
               _buildMiniStat('Nasabah', nasabahAktif, 'Aktif'),
@@ -521,7 +655,6 @@ class _WeeklyStatChart extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          // Susunan Grafik Batang Dinamis
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,

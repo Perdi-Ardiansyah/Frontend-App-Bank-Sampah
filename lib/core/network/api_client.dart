@@ -72,6 +72,8 @@ class ApiClient {
 
 // ── JWT Interceptor ──────────────────────────────────────────────────────────
 
+// ── JWT Interceptor ──────────────────────────────────────────────────────────
+
 class _AuthInterceptor extends Interceptor {
   @override
   Future<void> onRequest(
@@ -97,8 +99,13 @@ class _AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401) {
-      print('🚨 ERROR 401: Token ditolak atau tidak valid!');
+    // 1. KITA TANGKAP JALUR (PATH) APA YANG SEDANG DIAKSES
+    final String path = err.requestOptions.path;
+
+    // 2. KITA TAMBAHKAN SYARAT: && !path.contains('login')
+    // Artinya: Jika eror 401 DAN jalurnya BUKAN dari proses login
+    if (err.response?.statusCode == 401 && !path.contains('login')) {
+      print('🚨 ERROR 401: Token ditolak atau tidak valid di path $path!');
       await StorageHelper.clearAll();
 
       final context = navigatorKey.currentContext;
@@ -109,6 +116,8 @@ class _AuthInterceptor extends Interceptor {
         );
       }
     }
+    
+    // Biarkan eror dari /login diteruskan ke UI (misal untuk notif "Password Salah")
     handler.next(err);
   }
 }
